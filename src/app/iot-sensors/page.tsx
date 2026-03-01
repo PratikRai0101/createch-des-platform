@@ -84,10 +84,11 @@ export default function IotSensorsPage() {
                 <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
 
                 {/* YOLO Bounding Boxes (Animated) */}
-                <YoloBox label="EXCAVATOR 98%" x={20} y={40} w={150} h={120} color="border-emerald-400 text-emerald-400" />
-                <YoloBox label="WORKER (PPE: OK) 92%" x={45} y={65} w={40} h={80} color="border-blue-400 text-blue-400" />
-                <YoloBox label="WORKER (PPE: OK) 89%" x={55} y={70} w={35} h={75} color="border-blue-400 text-blue-400" />
-                <YoloBox label="CONCRETE POUR 78%" x={70} y={30} w={100} h={140} color="border-purple-400 text-purple-400" />
+                {/* Repositioned to align with the new background image */}
+                <YoloBox label="EXCAVATOR 98%" x={25} y={55} w={380} h={160} color="border-emerald-400 text-emerald-400" />
+                <YoloBox label="WORKER (PPE: OK) 92%" x={40} y={58} w={35} h={70} color="border-blue-400 text-blue-400" />
+                <YoloBox label="WORKER (PPE: OK) 89%" x={48} y={58} w={35} h={70} color="border-blue-400 text-blue-400" />
+                <YoloBox label="TRENCH 78%" x={68} y={20} w={180} h={250} color="border-purple-400 text-purple-400" />
 
                 {/* Tracking Reticle Center */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-30 text-white pointer-events-none">
