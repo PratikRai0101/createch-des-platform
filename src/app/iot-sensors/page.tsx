@@ -77,7 +77,7 @@ export default function IotSensorsPage() {
                 {/* Background image mockup for the site */}
                 <div 
                   className="absolute inset-0 opacity-80 bg-cover bg-center mix-blend-luminosity"
-                  style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&q=80&w=1600")' }}
+                  style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1563050912-ceb738fcc84e?auto=format&fit=crop&q=80&w=1600")' }}
                 ></div>
                 
                 {/* Overlay Grid */}
