@@ -88,47 +88,8 @@ export default function Home() {
   if (!isMounted) return null;
 
   return (
-    <div className="flex h-screen bg-[#f8fafc] text-gray-900 overflow-hidden font-sans">
-      {/* Sidebar */}
-      <aside className="w-64 bg-[#00447c] text-white flex flex-col shadow-xl z-20">
-        <div className="p-6 flex items-center gap-3 border-b border-[#003366]">
-          <div className="bg-white p-2 rounded-lg">
-            <Box className="w-6 h-6 text-[#0077c8]" />
-          </div>
-          <div>
-            <h1 className="font-bold text-lg leading-tight tracking-tight">CreaTech</h1>
-            <p className="text-[10px] text-blue-200 uppercase tracking-wider font-semibold mt-0.5">Dynamic Engineering</p>
-          </div>
-        </div>
-        <nav className="flex-1 p-4 space-y-1">
-          <NavItem icon={<LayoutDashboard />} label="Command Center" active />
-          <NavItem icon={<Cpu />} label="Generative Design" />
-          <NavItem icon={<Activity />} label="IoT Sensors" />
-          <NavItem icon={<Construction />} label="Site Execution" />
-          <NavItem icon={<BarChart4 />} label="Analytics" />
-          <NavItem icon={<Settings />} label="Settings" />
-        </nav>
-        <div className="p-4 bg-[#003366] m-4 rounded-xl border border-[#00447c]/50">
-          <p className="text-[10px] text-blue-200 uppercase tracking-wider font-semibold mb-1">Active Project</p>
-          <p className="font-semibold text-sm text-white mb-3">L&T Infra Hub - Zone 4</p>
-          <div className="bg-[#002244] rounded-full h-1.5 w-full overflow-hidden">
-            <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: "45%" }}
-              transition={{ duration: 1, ease: "easeOut" }}
-              className="bg-blue-400 h-1.5 rounded-full"
-            />
-          </div>
-          <div className="flex justify-between items-center mt-2">
-            <p className="text-[10px] text-blue-300">Schedule: On Track</p>
-            <p className="text-[10px] text-white font-bold">45%</p>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col h-full overflow-y-auto relative">
-        {/* Topbar */}
+    <main className="flex-1 flex flex-col h-full w-full relative">
+      {/* Topbar */}
         <header className="bg-white border-b border-gray-200/80 px-8 py-4 flex justify-between items-center sticky top-0 z-10 shadow-sm backdrop-blur-md bg-white/90">
           <div>
             <h2 className="text-xl font-bold text-gray-800">Site Execution Dashboard</h2>
@@ -364,16 +325,6 @@ export default function Home() {
           </div>
         </div>
       </main>
-    </div>
-  );
-}
-
-function NavItem({ icon, label, active = false }: { icon: React.ReactNode, label: string, active?: boolean }) {
-  return (
-    <a href="#" className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${active ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white hover:bg-slate-800"}`}>
-      {icon}
-      {label}
-    </a>
   );
 }
 
