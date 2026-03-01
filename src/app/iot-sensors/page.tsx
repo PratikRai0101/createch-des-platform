@@ -85,10 +85,8 @@ export default function IotSensorsPage() {
 
                 {/* YOLO Bounding Boxes (Animated) */}
                 {/* Repositioned to align with the new background image */}
-                <YoloBox label="EXCAVATOR 98%" x={25} y={55} w={380} h={160} color="border-emerald-400 text-emerald-400" />
-                <YoloBox label="WORKER (PPE: OK) 92%" x={40} y={58} w={35} h={70} color="border-blue-400 text-blue-400" />
-                <YoloBox label="WORKER (PPE: OK) 89%" x={48} y={58} w={35} h={70} color="border-blue-400 text-blue-400" />
-                <YoloBox label="TRENCH 78%" x={68} y={20} w={180} h={250} color="border-purple-400 text-purple-400" />
+                <YoloBox label="EXCAVATOR 98%" x={24} y={55} w={230} h={60} color="border-emerald-400 text-emerald-400" />
+                <YoloBox label="TRENCH 78%" x={60} y={32} w={120} h={180} color="border-purple-400 text-purple-400" />
 
                 {/* Tracking Reticle Center */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-30 text-white pointer-events-none">
