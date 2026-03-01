@@ -70,6 +70,23 @@ export function useSiteSimulation() {
     });
   };
 
+  const injectDisaster = () => {
+    setIsSimulating(false); // Pause standard simulation
+    setSoilBearingCapacity(120); // Critical drop
+    setDeviation(48); // Massive out-of-plumb
+    setAnomalyDetected(true);
+    setStatus("CRITICAL");
+    setNewDepth(baseDepth + (48 * 0.005));
+    
+    setDeviationHistory(curr => {
+      return [...curr.slice(1), { 
+        time: new Date().toLocaleTimeString().split(' ')[0], 
+        dev: 48,
+        safe: 20
+      }];
+    });
+  };
+
   const resetSimulation = () => {
     setIsSimulating(false);
     setDeviation(0);
@@ -94,6 +111,7 @@ export function useSiteSimulation() {
     aiOptimized,
     deviationHistory,
     triggerGenerativeRedesign,
-    resetSimulation
+    resetSimulation,
+    injectDisaster
   };
 }

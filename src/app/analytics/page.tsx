@@ -32,7 +32,7 @@ export default function AnalyticsPage() {
             <option>Last 12 Months</option>
             <option>Project Lifetime</option>
           </select>
-          <button className="px-4 py-2 text-sm font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg shadow-sm transition-colors">
+          <button onClick={() => window.print()} className="px-4 py-2 text-sm font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg shadow-sm transition-colors print:hidden">
             Export Report (.pdf)
           </button>
         </div>

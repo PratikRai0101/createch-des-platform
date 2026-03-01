@@ -30,11 +30,25 @@ export default function Home() {
     aiOptimized,
     deviationHistory,
     triggerGenerativeRedesign,
-    resetSimulation
+    resetSimulation,
+    injectDisaster
   } = useSiteSimulation();
 
   const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => setIsMounted(true), []);
+  
+  useEffect(() => {
+    setIsMounted(true);
+    
+    // Hidden Keyboard shortcut for Disaster Injection (Ctrl+Shift+D)
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+        injectDisaster();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [injectDisaster]);
+
   if (!isMounted) return null;
 
   return (

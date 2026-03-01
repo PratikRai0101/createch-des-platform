@@ -12,3 +12,36 @@ body {
   background-color: #f3f4f6;
   color: #111827;
 }
+
+@media print {
+  /* Hide the sidebar */
+  aside {
+    display: none !important;
+  }
+  
+  /* Reset background colors to white for printing to save ink and look professional */
+  body, main, div, header {
+    background-color: white !important;
+    color: black !important;
+  }
+  
+  /* Remove box shadows and smooth out borders for print */
+  * {
+    box-shadow: none !important;
+  }
+  
+  /* Ensure charts print correctly */
+  .recharts-wrapper {
+    max-width: 100% !important;
+  }
+  
+  /* Hide UI elements not meant for the report */
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Force page breaks if needed */
+  .page-break {
+    page-break-before: always;
+  }
+}
