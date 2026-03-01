@@ -76,8 +76,8 @@ export default function IotSensorsPage() {
               <div className="flex-1 bg-slate-900 rounded-xl relative overflow-hidden flex items-center justify-center border border-slate-700">
                 {/* Background image mockup for the site */}
                 <div 
-                  className="absolute inset-0 opacity-40 bg-cover bg-center grayscale"
-                  style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1541888086925-ebc6607f4f70?auto=format&fit=crop&q=80&w=1600")' }}
+                  className="absolute inset-0 opacity-80 bg-cover bg-center mix-blend-luminosity"
+                  style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&q=80&w=1600")' }}
                 ></div>
                 
                 {/* Overlay Grid */}
