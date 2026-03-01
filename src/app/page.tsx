@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import DigitalTwinCanvas from "@/components/DigitalTwinCanvas";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity,
   AlertTriangle,
@@ -81,22 +82,25 @@ export default function Home() {
     setAiOptimized(true);
     setAnomalyDetected(false);
     setStatus("STABLE");
+    // Show AI Recalibration KPI update
   };
 
-  if (!isMounted) return null; // Avoid hydration mismatch with Recharts
+  if (!isMounted) return null;
 
   return (
-    <div className="flex h-screen bg-gray-50 text-gray-900 overflow-hidden font-sans">
+    <div className="flex h-screen bg-[#f8fafc] text-gray-900 overflow-hidden font-sans">
       {/* Sidebar */}
-      <aside className="w-64 bg-slate-900 text-white flex flex-col">
-        <div className="p-6 flex items-center gap-3 border-b border-slate-700">
-          <Box className="w-8 h-8 text-blue-400" />
+      <aside className="w-64 bg-[#00447c] text-white flex flex-col shadow-xl z-20">
+        <div className="p-6 flex items-center gap-3 border-b border-[#003366]">
+          <div className="bg-white p-2 rounded-lg">
+            <Box className="w-6 h-6 text-[#0077c8]" />
+          </div>
           <div>
-            <h1 className="font-bold text-lg leading-tight">CreaTech DES</h1>
-            <p className="text-xs text-slate-400">Dynamic Engineering Sys</p>
+            <h1 className="font-bold text-lg leading-tight tracking-tight">CreaTech</h1>
+            <p className="text-[10px] text-blue-200 uppercase tracking-wider font-semibold mt-0.5">Dynamic Engineering</p>
           </div>
         </div>
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-4 space-y-1">
           <NavItem icon={<LayoutDashboard />} label="Command Center" active />
           <NavItem icon={<Cpu />} label="Generative Design" />
           <NavItem icon={<Activity />} label="IoT Sensors" />
@@ -104,86 +108,186 @@ export default function Home() {
           <NavItem icon={<BarChart4 />} label="Analytics" />
           <NavItem icon={<Settings />} label="Settings" />
         </nav>
-        <div className="p-4 bg-slate-800 m-4 rounded-xl">
-          <p className="text-xs text-slate-300 mb-2">Project Name</p>
-          <p className="font-semibold text-sm text-blue-300">L&T Infra Hub - Zone 4</p>
-          <div className="mt-4 bg-slate-700 rounded-full h-1.5 w-full">
-            <div className="bg-blue-500 h-1.5 rounded-full w-[45%]"></div>
+        <div className="p-4 bg-[#003366] m-4 rounded-xl border border-[#00447c]/50">
+          <p className="text-[10px] text-blue-200 uppercase tracking-wider font-semibold mb-1">Active Project</p>
+          <p className="font-semibold text-sm text-white mb-3">L&T Infra Hub - Zone 4</p>
+          <div className="bg-[#002244] rounded-full h-1.5 w-full overflow-hidden">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: "45%" }}
+              transition={{ duration: 1, ease: "easeOut" }}
+              className="bg-blue-400 h-1.5 rounded-full"
+            />
           </div>
-          <p className="text-xs text-slate-400 mt-2 text-right">45% Complete</p>
+          <div className="flex justify-between items-center mt-2">
+            <p className="text-[10px] text-blue-300">Schedule: On Track</p>
+            <p className="text-[10px] text-white font-bold">45%</p>
+          </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col h-full overflow-y-auto">
+      <main className="flex-1 flex flex-col h-full overflow-y-auto relative">
         {/* Topbar */}
-        <header className="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center sticky top-0 z-10">
-          <h2 className="text-xl font-bold text-gray-800">Site Execution Dashboard</h2>
+        <header className="bg-white border-b border-gray-200/80 px-8 py-4 flex justify-between items-center sticky top-0 z-10 shadow-sm backdrop-blur-md bg-white/90">
+          <div>
+            <h2 className="text-xl font-bold text-gray-800">Site Execution Dashboard</h2>
+            <p className="text-xs text-gray-500 font-medium mt-0.5">Real-time Structural Recalibration via Edge Node</p>
+          </div>
           <div className="flex gap-4">
-            <div className="flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-              Live Sync
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border ${
+              anomalyDetected ? "bg-red-50 text-red-600 border-red-200" : "bg-green-50 text-green-600 border-green-200"
+            }`}>
+              <span className={`w-2 h-2 rounded-full ${anomalyDetected ? "bg-red-500 animate-pulse" : "bg-green-500"}`}></span>
+              {anomalyDetected ? "Critical Anomaly" : "Live Sync Active"}
             </div>
             <button
               onClick={() => setIsSimulating(!isSimulating)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors ${
-                isSimulating ? "bg-red-100 text-red-700" : "bg-blue-600 text-white hover:bg-blue-700"
+              className={`px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all shadow-sm ${
+                isSimulating ? "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50" : "bg-[#0077c8] text-white hover:bg-[#0066ad] hover:shadow-md"
               }`}
             >
-              {isSimulating ? "Pause Simulation" : "Start Live Simulation"}
+              {isSimulating ? "Pause Data Feed" : "Start Live Simulation"}
             </button>
           </div>
         </header>
 
         {/* Dashboard Content */}
-        <div className="p-8 grid grid-cols-12 gap-6">
+        <div className="p-8 grid grid-cols-12 gap-6 max-w-[1600px] mx-auto w-full">
           
           {/* Top KPIs */}
           <div className="col-span-12 grid grid-cols-4 gap-6">
-            <KpiCard title="Active Sensors" value="1,244" trend="+12" icon={<Activity />} />
-            <KpiCard title="AI Recalibrations" value={aiOptimized ? "1" : "0"} trend="Today" icon={<RefreshCw />} color="text-purple-600" />
-            <KpiCard title="Estimated Rework Cost" value={aiOptimized ? "$0" : "$54k"} trend={aiOptimized ? "-100%" : "+12%"} icon={<AlertTriangle />} color={aiOptimized ? "text-green-600" : "text-amber-500"} />
-            <KpiCard title="Schedule Variance" value={aiOptimized ? "-1 day" : "+4 days"} trend="Critical Path" icon={<Zap />} color={aiOptimized ? "text-green-600" : "text-red-500"} />
+            <KpiCard title="Active Edge Nodes" value="1,244" trend="+12 online" icon={<Activity />} />
+            <KpiCard 
+              title="AI Recalibrations" 
+              value={aiOptimized ? "1" : "0"} 
+              trend="Today" 
+              icon={<RefreshCw />} 
+              color={aiOptimized ? "text-purple-600" : "text-gray-400"} 
+              bgColor={aiOptimized ? "bg-purple-100" : "bg-gray-100"}
+            />
+            <KpiCard 
+              title="Estimated Rework Cost" 
+              value={aiOptimized ? "₹0" : (anomalyDetected ? "₹45.2L" : "₹0")} 
+              trend={aiOptimized ? "-100% mitigated" : (anomalyDetected ? "+12% variance" : "On budget")} 
+              icon={<AlertTriangle />} 
+              color={aiOptimized ? "text-green-600" : (anomalyDetected ? "text-red-600" : "text-green-600")} 
+              bgColor={aiOptimized ? "bg-green-100" : (anomalyDetected ? "bg-red-100" : "bg-green-100")}
+              pulse={anomalyDetected && !aiOptimized}
+            />
+            <KpiCard 
+              title="Schedule Impact" 
+              value={aiOptimized ? "-1 day" : (anomalyDetected ? "+4 days" : "0 days")} 
+              trend="Critical Path" 
+              icon={<Zap />} 
+              color={aiOptimized ? "text-green-600" : (anomalyDetected ? "text-red-600" : "text-gray-600")} 
+              bgColor={aiOptimized ? "bg-green-100" : (anomalyDetected ? "bg-red-100" : "bg-gray-100")}
+            />
           </div>
 
           {/* Left Column: Generative Design View */}
-          <div className="col-span-12 lg:col-span-8 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h3 className="text-lg font-bold text-gray-800">Generative Design Recalibration</h3>
-                <p className="text-sm text-gray-500">Foundation Pile Layout & Depth</p>
+          <div className="col-span-12 lg:col-span-8 flex flex-col gap-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col flex-1 relative overflow-hidden">
+              {/* Animated background gradient if critical */}
+              <AnimatePresence>
+                {anomalyDetected && !aiOptimized && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 bg-gradient-to-r from-red-50 to-transparent pointer-events-none"
+                  />
+                )}
+              </AnimatePresence>
+
+              <div className="flex justify-between items-start mb-6 relative z-10">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <Cpu className="w-5 h-5 text-[#0077c8]" />
+                    Generative Digital Twin
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">Autonomous Recalibration • Sector 7 Structural Beam</p>
+                </div>
+                
+                <AnimatePresence mode="wait">
+                  {anomalyDetected && !aiOptimized ? (
+                    <motion.button
+                      key="optimize-btn"
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.9, opacity: 0 }}
+                      onClick={triggerGenerativeRedesign}
+                      className="bg-[#0077c8] hover:bg-[#0066ad] text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-blue-500/30 transition-all hover:scale-105"
+                    >
+                      <Zap className="w-4 h-4 fill-current" />
+                      Execute AI Recalibration
+                    </motion.button>
+                  ) : aiOptimized ? (
+                    <motion.div
+                      key="optimized-badge"
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="bg-green-100 text-green-700 border border-green-200 px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2"
+                    >
+                      <Zap className="w-4 h-4" />
+                      Geometry Optimized
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
               </div>
-              {anomalyDetected && !aiOptimized && (
-                <button
-                  onClick={triggerGenerativeRedesign}
-                  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 animate-bounce"
-                >
-                  <Cpu className="w-4 h-4" />
-                  Apply AI Optimization
-                </button>
-              )}
-              {aiOptimized && (
-                <div className="bg-green-100 text-green-700 px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2">
-                  <Zap className="w-4 h-4" />
-                  Design Optimized
-                </div>
-              )}
-            </div>
-            
-            <div className="flex-1 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center p-2 relative overflow-hidden min-h-[400px]">
-              <DigitalTwinCanvas 
-                deviation={deviation} 
-                status={status} 
-                baseDepth={baseDepth} 
-                newDepth={newDepth} 
-                aiOptimized={aiOptimized} 
-              />
-              {anomalyDetected && !aiOptimized && (
-                <div className="absolute top-4 right-4 z-10 bg-red-500/90 text-white px-4 py-2 rounded-lg font-bold shadow-xl border border-red-200 flex items-center gap-2 animate-pulse">
-                  <AlertTriangle className="w-5 h-5" />
-                  Site Deviation Critical!
-                </div>
-              )}
+              
+              <div className="flex-1 rounded-xl border border-gray-200 flex items-center justify-center relative overflow-hidden min-h-[450px] shadow-inner bg-[#111111]">
+                <DigitalTwinCanvas 
+                  deviation={deviation} 
+                  status={status} 
+                  baseDepth={baseDepth} 
+                  newDepth={newDepth} 
+                  aiOptimized={aiOptimized} 
+                />
+                
+                {/* Critical Overlay Alert */}
+                <AnimatePresence>
+                  {anomalyDetected && !aiOptimized && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      className="absolute top-6 right-6 z-10 bg-red-600/90 backdrop-blur-md text-white px-5 py-3 rounded-xl font-bold shadow-2xl border border-red-400 flex items-center gap-3"
+                    >
+                      <AlertTriangle className="w-6 h-6 animate-pulse" />
+                      <div>
+                        <div className="text-xs text-red-200 uppercase tracking-wide">Action Required</div>
+                        <div className="text-sm">Tolerance Exceeded by {(deviation - 20).toFixed(1)}mm</div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                
+                {/* AI Recalculation Stats Overlay */}
+                <AnimatePresence>
+                  {aiOptimized && (
+                    <motion.div 
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="absolute top-6 left-6 z-10 bg-white/90 backdrop-blur-md text-gray-800 p-4 rounded-xl shadow-xl border border-gray-200"
+                    >
+                      <div className="text-[10px] uppercase font-bold tracking-wider text-purple-600 mb-2 flex items-center gap-1">
+                        <Cpu className="w-3 h-3" /> AI Parameter Shifts
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between gap-8 text-sm border-b border-gray-100 pb-1">
+                          <span className="text-gray-500">Original Depth</span>
+                          <span className="font-mono line-through text-gray-400">{(baseDepth * 1000).toFixed(0)}mm</span>
+                        </div>
+                        <div className="flex justify-between gap-8 text-sm">
+                          <span className="font-semibold">New Depth (Z-axis)</span>
+                          <span className="font-mono font-bold text-green-600">{(newDepth * 1000).toFixed(0)}mm</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </div>
 
@@ -273,17 +377,20 @@ function NavItem({ icon, label, active = false }: { icon: React.ReactNode, label
   );
 }
 
-function KpiCard({ title, value, trend, icon, color = "text-blue-600" }: { title: string, value: string, trend: string, icon: React.ReactNode, color?: string }) {
+function KpiCard({ title, value, trend, icon, color = "text-blue-600", bgColor = "bg-blue-50", pulse = false }: { title: string, value: string, trend: string, icon: React.ReactNode, color?: string, bgColor?: string, pulse?: boolean }) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-      <div className="flex justify-between items-start mb-2">
-        <p className="text-sm font-medium text-gray-500">{title}</p>
-        <div className={`p-2 bg-gray-50 rounded-lg ${color}`}>
+    <div className={`bg-white rounded-2xl shadow-sm border ${pulse ? 'border-red-300 shadow-red-100 shadow-lg' : 'border-gray-100'} p-5 transition-all duration-500 relative overflow-hidden`}>
+      {pulse && (
+        <div className="absolute inset-0 bg-red-50 opacity-50 animate-pulse pointer-events-none" />
+      )}
+      <div className="flex justify-between items-start mb-3 relative z-10">
+        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">{title}</p>
+        <div className={`p-2.5 rounded-xl ${bgColor} ${color}`}>
           {icon}
         </div>
       </div>
-      <h4 className="text-2xl font-bold text-gray-900">{value}</h4>
-      <p className="text-xs text-gray-500 mt-2 font-medium bg-gray-50 inline-block px-2 py-1 rounded">
+      <h4 className={`text-3xl font-black relative z-10 ${pulse ? 'text-red-600' : 'text-gray-900'}`}>{value}</h4>
+      <p className="text-xs text-gray-500 mt-2 font-semibold bg-gray-50/80 inline-block px-2.5 py-1 rounded-md border border-gray-100 relative z-10">
         {trend}
       </p>
     </div>
