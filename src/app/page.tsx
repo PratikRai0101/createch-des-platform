@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import DigitalTwinCanvas from "@/components/DigitalTwinCanvas";
 import {
   Activity,
   AlertTriangle,
@@ -35,8 +36,11 @@ const initialCostData = [
 
 export default function Home() {
   const [isSimulating, setIsSimulating] = useState(false);
+  const [deviation, setDeviation] = useState(0); // mm
+  const [status, setStatus] = useState<"STABLE" | "CRITICAL">("STABLE");
   const [soilBearingCapacity, setSoilBearingCapacity] = useState(450); // kPa
-  const [pileDepth, setPileDepth] = useState(12); // meters
+  const [baseDepth, setBaseDepth] = useState(0.5); // base beam depth
+  const [newDepth, setNewDepth] = useState(0.5);
   const [anomalyDetected, setAnomalyDetected] = useState(false);
   const [aiOptimized, setAiOptimized] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -50,21 +54,33 @@ export default function Home() {
     let interval: ReturnType<typeof setInterval>;
     if (isSimulating && !aiOptimized) {
       interval = setInterval(() => {
+        // Soil capacity drops
         setSoilBearingCapacity((prev) => {
           const drop = prev - Math.random() * 15;
-          if (drop < 320) setAnomalyDetected(true);
           return drop > 250 ? drop : 250;
         });
+        
+        // Site Deviation increases (e.g. column shifted out of plumb)
+        setDeviation((prev) => {
+          const newDeviation = prev + (Math.random() * 5);
+          if (newDeviation > 20) {
+             setAnomalyDetected(true);
+             setStatus("CRITICAL");
+             // Calculate what the new depth *should* be
+             setNewDepth(baseDepth + (Math.abs(newDeviation) * 0.005));
+          }
+          return newDeviation > 50 ? 50 : newDeviation;
+        });
+        
       }, 1500);
     }
     return () => clearInterval(interval);
-  }, [isSimulating, aiOptimized]);
+  }, [isSimulating, aiOptimized, baseDepth]);
 
   const triggerGenerativeRedesign = () => {
     setAiOptimized(true);
     setAnomalyDetected(false);
-    // AI recalculates pile depth based on new poor soil capacity
-    setPileDepth(18); // deeper piles
+    setStatus("STABLE");
   };
 
   if (!isMounted) return null; // Avoid hydration mismatch with Recharts
@@ -154,44 +170,20 @@ export default function Home() {
               )}
             </div>
             
-            <div className="flex-1 bg-slate-50 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center p-8 relative overflow-hidden min-h-[400px]">
-              {/* Mock Generative Design Visualization */}
-              <div className="relative w-full max-w-md aspect-square bg-blue-50 rounded-lg p-4 transition-all duration-700">
-                <div className="absolute top-2 left-2 text-xs font-mono text-blue-800 bg-blue-100 px-2 py-1 rounded z-10">
-                  Z-Axis Depth: {pileDepth.toFixed(1)}m
+            <div className="flex-1 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center p-2 relative overflow-hidden min-h-[400px]">
+              <DigitalTwinCanvas 
+                deviation={deviation} 
+                status={status} 
+                baseDepth={baseDepth} 
+                newDepth={newDepth} 
+                aiOptimized={aiOptimized} 
+              />
+              {anomalyDetected && !aiOptimized && (
+                <div className="absolute top-4 right-4 z-10 bg-red-500/90 text-white px-4 py-2 rounded-lg font-bold shadow-xl border border-red-200 flex items-center gap-2 animate-pulse">
+                  <AlertTriangle className="w-5 h-5" />
+                  Site Deviation Critical!
                 </div>
-                
-                {/* SVG representing foundation layout */}
-                <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-md transition-all duration-1000">
-                  <rect x="10" y="10" width="80" height="80" fill="#e2e8f0" rx="4" />
-                  {/* Grid of piles */}
-                  {[20, 50, 80].map((cx) =>
-                    [20, 50, 80].map((cy) => (
-                      <circle
-                        key={`${cx}-${cy}`}
-                        cx={cx}
-                        cy={cy}
-                        r={aiOptimized ? 6 : 4}
-                        fill={anomalyDetected ? "#ef4444" : (aiOptimized ? "#8b5cf6" : "#3b82f6")}
-                        className="transition-all duration-1000"
-                      />
-                    ))
-                  )}
-                  {/* Connectors */}
-                  {aiOptimized && (
-                    <path d="M20,20 L80,80 M20,80 L80,20" stroke="#8b5cf6" strokeWidth="2" strokeDasharray="4" className="animate-pulse" />
-                  )}
-                </svg>
-
-                {anomalyDetected && !aiOptimized && (
-                  <div className="absolute inset-0 bg-red-500/10 flex items-center justify-center rounded-lg backdrop-blur-[1px]">
-                    <div className="bg-white text-red-600 px-4 py-2 rounded-lg font-bold shadow-xl border border-red-200 flex items-center gap-2">
-                      <AlertTriangle className="w-5 h-5" />
-                      Design Gap Detected!
-                    </div>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           </div>
 
@@ -212,14 +204,14 @@ export default function Home() {
                   status={anomalyDetected ? "critical" : "normal"} 
                 />
                 <SensorRow 
-                  label="Concrete Curing Temp" 
-                  value="24°C" 
-                  status="normal" 
+                  label="Column Out-of-Plumb Deviation" 
+                  value={`${deviation.toFixed(1)} mm`} 
+                  status={status === "CRITICAL" ? "critical" : "normal"} 
                 />
                 <SensorRow 
-                  label="Excavator Utilization" 
-                  value={aiOptimized ? "100%" : "82%"} 
-                  status="normal" 
+                  label="Generative Recalibration" 
+                  value={aiOptimized ? "ACTIVE" : "STANDBY"} 
+                  status={aiOptimized ? "normal" : "warning"} 
                 />
               </div>
 
