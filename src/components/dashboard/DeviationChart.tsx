@@ -26,7 +26,7 @@ export default function DeviationChart({ data }: { data: DeviationData[] }) {
         Out-of-Plumb Deviation Timeline
       </h3>
       <div className="flex-1 w-full min-h-[150px]">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height={300}>
           <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
             <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />

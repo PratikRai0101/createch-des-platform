@@ -29,6 +29,8 @@ export default function Home() {
     newDepth,
     anomalyDetected,
     aiOptimized,
+    recalibrationCount,
+    scheduleImpact,
     deviationHistory,
     viewMode,
     triggerGenerativeRedesign,
@@ -96,11 +98,11 @@ export default function Home() {
           <KpiCard title="Active Edge Nodes" value="1,244" trend="+12 online" icon={<Activity />} />
           <KpiCard 
             title="AI Recalibrations" 
-            value={aiOptimized ? "1" : "0"} 
-            trend="Today" 
+            value={recalibrationCount.toString()} 
+            trend="Total" 
             icon={<RefreshCw />} 
-            color={aiOptimized ? "text-purple-600" : "text-gray-400"} 
-            bgColor={aiOptimized ? "bg-purple-100" : "bg-gray-100"}
+            color={recalibrationCount > 0 ? "text-purple-600" : "text-gray-400"} 
+            bgColor={recalibrationCount > 0 ? "bg-purple-100" : "bg-gray-100"}
           />
           <KpiCard 
             title="Estimated Rework Cost" 

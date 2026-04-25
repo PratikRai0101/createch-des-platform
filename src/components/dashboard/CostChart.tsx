@@ -20,7 +20,21 @@ const initialCostData = [
   { day: "Sat", projected: 72000, actual: null },
 ];
 
-export default function CostChart({ aiOptimized }: { aiOptimized: boolean }) {
+type CostChartPoint = {
+  day: string;
+  projected: number;
+  actual: number | null;
+};
+
+export default function CostChart({
+  aiOptimized,
+  data,
+}: {
+  aiOptimized: boolean;
+  data?: CostChartPoint[];
+}) {
+  const chartData = data ?? initialCostData;
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex-1 min-h-[250px] flex flex-col">
       <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -29,7 +43,7 @@ export default function CostChart({ aiOptimized }: { aiOptimized: boolean }) {
       </h3>
       <div className="flex-1 w-full min-h-[150px]">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={initialCostData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="colorProjected" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#0077c8" stopOpacity={0.1}/>
