@@ -3,8 +3,10 @@
 import { BarChart4, TrendingDown, Leaf, DollarSign, Target, ArrowUpRight } from "lucide-react";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-  LineChart, Line, ComposedChart, Area
+  Line, ComposedChart, Area
 } from "recharts";
+import type { ReactNode } from "react";
+import { useSiteSimulation } from "@/hooks/useSiteSimulation";
 
 const savingsData = [
   { month: "Jan", projected: 400, actual: 380, carbonSaved: 12 },
@@ -16,6 +18,12 @@ const savingsData = [
 ];
 
 export default function AnalyticsPage() {
+  const { aiOptimized, anomalyDetected, deviation, soilBearingCapacity, scenarioEvents, viewMode } = useSiteSimulation();
+  const recentEvents = scenarioEvents.slice(-3).reverse();
+
+  const costSavings = aiOptimized ? "₹1.42 Cr" : anomalyDetected ? "₹0.86 Cr" : "₹1.10 Cr";
+  const reworkReduction = aiOptimized ? "94%" : anomalyDetected ? "62%" : "81%";
+
   return (
     <div className="flex-1 flex flex-col h-full w-full bg-[#f8fafc]">
       <header className="bg-white border-b border-gray-200/80 px-8 py-4 flex justify-between items-center sticky top-0 z-10 shadow-sm backdrop-blur-md bg-white/90">
@@ -24,7 +32,11 @@ export default function AnalyticsPage() {
             <BarChart4 className="text-[#0077c8]" />
             Business Analytics & ESG
           </h2>
-          <p className="text-xs text-gray-500 font-medium mt-0.5">Cost Efficiency & Carbon Mitigation Reporting</p>
+          <p className="text-xs text-gray-500 font-medium mt-0.5">
+            {viewMode === "executive"
+              ? "Executive impact view: cost, carbon, and schedule confidence"
+              : "Engineering impact view: live constraints mapped to business outcomes"}
+          </p>
         </div>
         <div className="flex gap-3">
           <select className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 outline-none">
@@ -43,9 +55,9 @@ export default function AnalyticsPage() {
         <div className="col-span-12 grid grid-cols-3 gap-6">
           <ReportCard 
             title="Total Cost Savings (AI Driven)" 
-            value="₹1.42 Cr" 
+            value={costSavings} 
             sub="vs. Baseline Budget" 
-            trend="+18% over last quarter" 
+            trend={aiOptimized ? "+18% over last quarter" : anomalyDetected ? "Recalibration pending; savings at risk" : "+9% over baseline"} 
             icon={<DollarSign />} 
             color="text-emerald-600" 
             bg="bg-emerald-50" 
@@ -61,9 +73,9 @@ export default function AnalyticsPage() {
           />
           <ReportCard 
             title="Rework Reduction Rate" 
-            value="94%" 
+            value={reworkReduction} 
             sub="Tolerance errors caught pre-execution" 
-            trend="-8% schedule delays" 
+            trend={aiOptimized ? "-8% schedule delays" : anomalyDetected ? "+4 day projected slip" : "On-plan trajectory"} 
             icon={<Target />} 
             color="text-[#0077c8]" 
             bg="bg-blue-50" 
@@ -119,6 +131,18 @@ export default function AnalyticsPage() {
               </ResponsiveContainer>
             </div>
           </div>
+
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-gray-600 mb-3">Live Decision Trace</h4>
+            <div className="space-y-2">
+              {recentEvents.map((event) => (
+                <div key={event.id} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                  <p className="text-[11px] font-bold text-gray-700">{event.ts} • {event.stage}</p>
+                  <p className="text-xs text-gray-600 mt-0.5">{event.title}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Insight generation */}
@@ -129,7 +153,9 @@ export default function AnalyticsPage() {
               AI Strategic Insight
             </h4>
             <p className="text-blue-100 text-sm max-w-3xl">
-              By continuously recalibrating structural tolerances during the Zone 4 foundation pour, the generative model eliminated the need for 45 cubic meters of corrective concrete, directly contributing to this month's cost drop and carbon mitigation peak.
+              {aiOptimized
+                ? "By recalibrating structural tolerances during Zone 4 foundation execution, the model avoided corrective concrete and preserved both cost and carbon targets."
+                : `Current live deviation is ${deviation.toFixed(1)}mm at ${Math.round(soilBearingCapacity)}kPa soil capacity. Optimization trigger remains active to prevent cost slippage.`}
             </p>
           </div>
           <button className="px-6 py-3 bg-white text-[#00447c] font-bold rounded-xl text-sm shadow-lg hover:shadow-xl transition-shadow">
@@ -142,7 +168,17 @@ export default function AnalyticsPage() {
   );
 }
 
-function ReportCard({ title, value, sub, trend, icon, color, bg }: any) {
+interface ReportCardProps {
+  title: string;
+  value: string;
+  sub: string;
+  trend: string;
+  icon: ReactNode;
+  color: string;
+  bg: string;
+}
+
+function ReportCard({ title, value, sub, trend, icon, color, bg }: ReportCardProps) {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 relative overflow-hidden group hover:border-gray-200 transition-colors">
       <div className="flex justify-between items-start mb-4">

@@ -2,8 +2,12 @@
 
 import { Construction, Clock, Truck, Users, Calendar, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
+import { useSiteSimulation } from "@/hooks/useSiteSimulation";
 
 export default function ExecutionPage() {
+  const { aiOptimized, anomalyDetected, scenarioStage, scenarioEvents } = useSiteSimulation();
+  const latestEvent = scenarioEvents[scenarioEvents.length - 1];
+
   return (
     <div className="flex-1 flex flex-col h-full w-full bg-[#f8fafc]">
       <header className="bg-white border-b border-gray-200/80 px-8 py-4 flex justify-between items-center sticky top-0 z-10 shadow-sm backdrop-blur-md bg-white/90">
@@ -22,12 +26,41 @@ export default function ExecutionPage() {
           <div className="w-px h-8 bg-gray-200 mx-2"></div>
           <div className="flex flex-col text-right">
             <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Schedule Variance</span>
-            <span className="text-sm font-bold text-red-600 flex items-center gap-1"><Clock className="w-3 h-3" /> +2 Days</span>
+            <span className={`text-sm font-bold flex items-center gap-1 ${
+              aiOptimized ? "text-green-600" : anomalyDetected ? "text-red-600" : "text-gray-700"
+            }`}>
+              <Clock className="w-3 h-3" />
+              {aiOptimized ? "-1 Day" : anomalyDetected ? "+4 Days" : "0 Days"}
+            </span>
           </div>
         </div>
       </header>
 
       <div className="p-8 grid grid-cols-12 gap-6 max-w-[1600px] mx-auto w-full">
+        <div className={`col-span-12 rounded-2xl border px-5 py-4 flex items-center justify-between ${
+          aiOptimized
+            ? "border-green-200 bg-green-50"
+            : anomalyDetected
+              ? "border-red-200 bg-red-50"
+              : "border-slate-200 bg-slate-50"
+        }`}>
+          <div>
+            <p className="text-[11px] uppercase tracking-wider font-bold text-gray-500">Execution Sync Status</p>
+            <p className="text-sm font-semibold text-gray-800 mt-1">
+              {aiOptimized
+                ? "Recalibration accepted. Execution sequence updated with recovered critical path."
+                : anomalyDetected
+                  ? "Critical anomaly active. Execution plan running in protected mode until redesign is applied."
+                  : "Execution and design assumptions are synchronized."}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-[11px] text-gray-500 font-semibold">Current Stage</p>
+            <p className="text-sm font-black text-gray-800">{scenarioStage}</p>
+            {latestEvent && <p className="text-[11px] text-gray-500 mt-1">{latestEvent.ts} • {latestEvent.title}</p>}
+          </div>
+        </div>
+
         {/* Simplified Gantt View */}
         <div className="col-span-12">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 overflow-x-auto">
@@ -55,7 +88,13 @@ export default function ExecutionPage() {
               <div className="space-y-4">
                 <GanttRow name="Foundation Pour" status="done" start={1} span={2} />
                 <GanttRow name="Curing Period" status="done" start={2} span={2} />
-                <GanttRow name="Level 1 Columns (AI Recalibrated)" status="active" start={3} span={3} warning />
+                <GanttRow
+                  name={aiOptimized ? "Level 1 Columns (AI Recalibrated)" : "Level 1 Columns (Under Review)"}
+                  status="active"
+                  start={3}
+                  span={3}
+                  warning={anomalyDetected && !aiOptimized}
+                />
                 <GanttRow name="Level 1 Slab Formwork" status="pending" start={5} span={2} />
                 <GanttRow name="MEP Rough-in (L1)" status="pending" start={6} span={3} />
               </div>
@@ -116,7 +155,17 @@ export default function ExecutionPage() {
   );
 }
 
-function GanttRow({ name, status, start, span, warning = false }: any) {
+type GanttStatus = "done" | "active" | "pending";
+
+interface GanttRowProps {
+  name: string;
+  status: GanttStatus;
+  start: number;
+  span: number;
+  warning?: boolean;
+}
+
+function GanttRow({ name, status, start, span, warning = false }: GanttRowProps) {
   const getStyle = () => {
     if (status === "done") return "bg-gray-200 border-gray-300 text-gray-500";
     if (status === "active") return warning ? "bg-amber-400 border-amber-500 text-amber-900 shadow-md shadow-amber-200" : "bg-blue-500 border-blue-600 text-white shadow-md shadow-blue-200";
@@ -150,7 +199,16 @@ function GanttRow({ name, status, start, span, warning = false }: any) {
   );
 }
 
-function MachineCard({ name, type, load, status, operator, warning }: any) {
+interface MachineCardProps {
+  name: string;
+  type: string;
+  load: string;
+  status: string;
+  operator: string;
+  warning?: boolean;
+}
+
+function MachineCard({ name, type, load, status, operator, warning = false }: MachineCardProps) {
   return (
     <div className={`p-4 rounded-xl border flex justify-between items-center ${warning ? 'bg-amber-50 border-amber-200' : 'bg-white border-gray-100 hover:border-gray-200'}`}>
       <div className="flex gap-4 items-center">
