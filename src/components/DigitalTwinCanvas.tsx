@@ -82,7 +82,7 @@ function CameraAnimator({ trigger }: { trigger: number }) {
   return null;
 }
 
-export default function DigitalTwinCanvas(props: DigitalTwinCanvasProps) {
+function WebGLCanvas(props: DigitalTwinCanvasProps) {
   const [flythroughTrigger, setFlythroughTrigger] = useState(0);
   const prevAiOptimized = useRef(false);
 
@@ -97,7 +97,16 @@ export default function DigitalTwinCanvas(props: DigitalTwinCanvasProps) {
 
   return (
     <div className="w-full h-full min-h-[400px] rounded-xl overflow-hidden bg-[#111111] relative">
-      <Canvas shadows camera={{ position: [5, 4, 8], fov: 45 }}>
+      <Canvas
+        shadows
+        camera={{ position: [5, 4, 8], fov: 45 }}
+        onCreated={(state) => {
+          if (!state.gl.domElement) {
+            throw new Error("WebGL context unavailable");
+          }
+        }}
+        gl={{ powerPreference: "high-performance", failIfMajorPerformanceCaveat: false }}
+      >
         <OrbitControls
           enablePan={true}
           enableZoom={true}
@@ -136,4 +145,49 @@ export default function DigitalTwinCanvas(props: DigitalTwinCanvasProps) {
       </div>
     </div>
   );
+}
+
+export default function DigitalTwinCanvas(props: DigitalTwinCanvasProps) {
+  const [webglOk, setWebglOk] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkWebgl = () => {
+      try {
+        const testCanvas = document.createElement("canvas");
+        const gl =
+          testCanvas.getContext("webgl") ||
+          testCanvas.getContext("experimental-webgl");
+        startTransition(() => {
+          setWebglOk(!!gl);
+        });
+      } catch {
+        startTransition(() => {
+          setWebglOk(false);
+        });
+      }
+    };
+    checkWebgl();
+  }, []);
+
+  if (webglOk === null) {
+    return (
+      <div className="w-full h-full min-h-[400px] rounded-xl bg-[#111111] flex items-center justify-center text-white/40 text-sm">
+        Initializing 3D view…
+      </div>
+    );
+  }
+
+  if (!webglOk) {
+    return (
+      <div className="w-full h-full min-h-[400px] rounded-xl bg-[#111111] flex flex-col items-center justify-center text-white/50 text-sm gap-2 px-8 text-center">
+        <span className="text-lg">🎮</span>
+        <p>3D view requires WebGL.</p>
+        <p className="text-white/30 text-xs max-w-xs">
+          Try opening this page in Chrome, Edge, or Firefox with hardware acceleration enabled.
+        </p>
+      </div>
+    );
+  }
+
+  return <WebGLCanvas {...props} />;
 }
