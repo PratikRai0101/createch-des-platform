@@ -32,9 +32,9 @@ Ship a connected closed-loop demo: Sense -> Detect -> Recalibrate -> Impact -> A
 - [x] Added one-click replay mode for end-to-end finals storytelling.
 - [x] Added backend event sync polling with simulation fallback indicator in the scenario ribbon.
 - [x] Added SSE event stream endpoint and frontend live subscription support.
+- [x] Added 3D tolerance envelope and load-vector annotations for faster engineering diagnosis.
 
 ### In Progress
-- [ ] Add richer structural annotations (load vectors, tolerance envelope, confidence band).
 - [ ] Add robust reconnect/backoff strategy for stream interruptions.
 
 ### Next
@@ -56,3 +56,4 @@ Ship a connected closed-loop demo: Sense -> Detect -> Recalibrate -> Impact -> A
 - 2026-04-28: Added automated replay sequence for deterministic live demonstration.
 - 2026-04-28: Enabled periodic backend event sync with automatic simulation fallback.
 - 2026-04-28: Added near-real-time SSE event transport alongside polling fallback.
+- 2026-04-28: Added load-vector and tolerance-envelope overlays in the digital twin scene.

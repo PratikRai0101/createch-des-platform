@@ -2,7 +2,7 @@
 
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Box, Cylinder, Grid, Plane, Edges, Html } from "@react-three/drei";
+import { Box, Cylinder, Grid, Plane, Edges, Html, Line } from "@react-three/drei";
 import * as THREE from "three";
 
 interface SceneProps {
@@ -197,6 +197,33 @@ export default function DigitalTwinScene({ deviation, status, baseDepth, newDept
             Δ Depth +{depthDeltaMm}mm
           </div>
         </Html>
+      )}
+
+      {/* Tolerance envelope for fast visual diagnosis */}
+      {status === "CRITICAL" && !aiOptimized && (
+        <Box args={[base_l + 0.3, baseDepth + 0.2, base_w + 0.2]} position={[2.0, 1.5, 0]}>
+          <meshBasicMaterial color="#ef4444" transparent opacity={0.08} />
+          <Edges scale={1.002} threshold={15} color="#fca5a5" />
+        </Box>
+      )}
+
+      {aiOptimized && (
+        <Box args={[base_l + 0.2, newDepth + 0.1, base_w + 0.1]} position={[2.0, 1.5, 0]}>
+          <meshBasicMaterial color="#22c55e" transparent opacity={0.06} />
+          <Edges scale={1.001} threshold={15} color="#86efac" />
+        </Box>
+      )}
+
+      {/* Load vector annotation for engineer mode storytelling */}
+      {deviation > 8 && !aiOptimized && (
+        <>
+          <Line points={[[2.0, 3.0, 0], [2.0, 2.0, 0]]} color="#fb923c" lineWidth={2} />
+          <Html position={[2.45, 3.0, 0]} center style={{ pointerEvents: "none" }}>
+            <div className="rounded border border-orange-400/70 bg-orange-950/80 px-2 py-1 text-[10px] font-mono text-orange-200 shadow">
+              Load vector ↑
+            </div>
+          </Html>
+        </>
       )}
 
       {/* Deviation Indicator Line (Appears when deviating) */}
