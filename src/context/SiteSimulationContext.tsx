@@ -93,6 +93,24 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
     []
   );
 
+  const mergePipelineRecords = useCallback((records: PipelineEvent[]) => {
+    setScenarioEvents((current) => {
+      const merged = new Map(current.map((event) => [event.id, event]));
+      records.forEach((record) => {
+        merged.set(record.id, {
+          id: record.id,
+          ts: record.ts,
+          stage: record.stage,
+          severity: record.severity,
+          title: record.title,
+          detail: record.detail,
+        });
+      });
+
+      return Array.from(merged.values()).slice(-30);
+    });
+  }, []);
+
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
 
@@ -163,21 +181,7 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
         }
 
         setPipelineConnected(true);
-        setScenarioEvents((current) => {
-          const merged = new Map(current.map((event) => [event.id, event]));
-          records.forEach((record) => {
-            merged.set(record.id, {
-              id: record.id,
-              ts: record.ts,
-              stage: record.stage,
-              severity: record.severity,
-              title: record.title,
-              detail: record.detail,
-            });
-          });
-
-          return Array.from(merged.values()).slice(-30);
-        });
+        mergePipelineRecords(records);
       } catch {
         if (!cancelled) {
           setPipelineConnected(false);
@@ -192,7 +196,46 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
       cancelled = true;
       window.clearInterval(interval);
     };
-  }, []);
+  }, [mergePipelineRecords]);
+
+  useEffect(() => {
+    let stream: EventSource | null = null;
+
+    try {
+      stream = new EventSource(`${API_BASE_URL}/api/events/stream`);
+
+      stream.onmessage = (message) => {
+        try {
+          const parsed = JSON.parse(message.data) as Partial<PipelineEvent>;
+
+          if (
+            parsed.id &&
+            parsed.ts &&
+            parsed.stage &&
+            parsed.severity &&
+            parsed.title &&
+            parsed.detail
+          ) {
+            mergePipelineRecords([parsed as PipelineEvent]);
+            setPipelineConnected(true);
+          }
+        } catch {
+          // Ignore malformed SSE events and continue polling fallback.
+        }
+      };
+
+      stream.onerror = () => {
+        setPipelineConnected(false);
+        stream?.close();
+      };
+    } catch {
+      setPipelineConnected(false);
+    }
+
+    return () => {
+      stream?.close();
+    };
+  }, [mergePipelineRecords]);
 
   const updateSimulationState = useCallback(
     (value: boolean) => {

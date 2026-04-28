@@ -1,3 +1,5 @@
+import asyncio
+import json
 from collections import deque
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -5,6 +7,7 @@ from typing import Any, Deque, Dict, List, Literal
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 app = FastAPI(title="CreaTech Generative AI Backend")
@@ -81,6 +84,13 @@ class EventRecord(BaseModel):
 
 
 event_log: Deque[EventRecord] = deque(maxlen=300)
+event_version = 0
+
+
+def append_event(event: EventRecord) -> None:
+    global event_version
+    event_log.append(event)
+    event_version += 1
 
 
 @app.post("/api/optimize-geometry", response_model=OptimizationResponse)
@@ -163,7 +173,7 @@ def optimize_geometry(req: OptimizationRequest):
             "recommended_option": "opt_b",
         },
     )
-    event_log.append(optimization_event)
+    append_event(optimization_event)
 
     return OptimizationResponse(
         original_depth_m=base_depth,
@@ -185,7 +195,7 @@ def ingest_event(payload: EventIngestRequest):
         detail=payload.detail,
         context=payload.context,
     )
-    event_log.append(event)
+    append_event(event)
     return event
 
 
@@ -193,6 +203,24 @@ def ingest_event(payload: EventIngestRequest):
 def latest_events(limit: int = 20):
     safe_limit = max(1, min(limit, 100))
     return list(event_log)[-safe_limit:]
+
+
+@app.get("/api/events/stream")
+async def stream_events():
+    async def event_generator():
+        last_seen_version = event_version
+
+        while True:
+            await asyncio.sleep(1.5)
+
+            if event_version != last_seen_version and len(event_log) > 0:
+                payload = event_log[-1].dict()
+                yield f"data: {json.dumps(payload)}\n\n"
+                last_seen_version = event_version
+            else:
+                yield "event: heartbeat\ndata: ping\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 @app.get("/health")

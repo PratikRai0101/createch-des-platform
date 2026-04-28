@@ -113,5 +113,6 @@
     *   Added one-click replay mode to run a deterministic end-to-end scenario during finals presentation.
     *   Introduced production-style AI event pipeline foundations with deterministic optimization traces and event-ingest endpoints.
     *   Added backend sync visibility in the command ribbon with automatic simulation fallback when API is offline.
+    *   Enabled near-real-time event propagation via backend SSE stream for tighter loop closure.
     *   Hardened finals branch quality with lint-clean frontend baseline for reliable live demo execution.
 *   **Speaker Notes:** "Our semifinal prototype proved the concept. For finals, we focused on operational trust: clearer workflows for leadership, deeper engineering fidelity in the twin, and a stronger event-to-decision pipeline story that can scale into real deployment."
