@@ -3,7 +3,8 @@
 import { useState, useMemo } from "react";
 import { Cpu, RefreshCw, Layers, SlidersHorizontal, Play, Zap, CheckCircle2, Scale } from "lucide-react";
 import { motion } from "framer-motion";
-import DigitalTwinCanvas from "@/components/DigitalTwinCanvas";
+import dynamic from "next/dynamic";
+const DigitalTwinCanvas = dynamic(() => import("@/components/DigitalTwinCanvas"), { ssr: false });
 
 interface GenerativeOption {
   id: string;

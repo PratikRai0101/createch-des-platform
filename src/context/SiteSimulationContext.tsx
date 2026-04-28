@@ -69,7 +69,7 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
   const [scenarioEvents, setScenarioEvents] = useState<ScenarioEvent[]>([
     {
       id: "evt-init",
-      ts: stamp(),
+      ts: "--:--:--",
       stage: "SENSE",
       severity: "info",
       title: "Scenario Engine Ready",

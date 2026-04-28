@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import DigitalTwinCanvas from "@/components/DigitalTwinCanvas";
+import dynamic from "next/dynamic";
+const DigitalTwinCanvas = dynamic(() => import("@/components/DigitalTwinCanvas"), { ssr: false });
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity,
