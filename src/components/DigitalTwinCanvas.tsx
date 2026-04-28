@@ -15,61 +15,66 @@ interface DigitalTwinCanvasProps {
 }
 
 function CameraAnimator({ trigger }: { trigger: number }) {
-  const { camera, controls } = useThree();
-  const ref = useRef({
-    phase: "idle" as "idle" | "forward" | "hold" | "back",
-    progress: 0,
-    holdTimer: 0,
-    savedPos: new THREE.Vector3(5, 4, 8),
-    savedTarget: new THREE.Vector3(2, 0, 0),
-    beamPos: new THREE.Vector3(2.5, 2, 3.5),
-    beamTarget: new THREE.Vector3(2, 0.8, 0),
-  });
+  const { camera } = useThree();
+  const controls = useThree((s) => s.controls);
+
+  const phase = useRef<"idle" | "forward" | "hold" | "back">("idle");
+  const progress = useRef(0);
+  const holdTimer = useRef(0);
+  const savedPos = useRef(new THREE.Vector3(5, 4, 8));
+  const savedTarget = useRef(new THREE.Vector3(2, 0, 0));
+  const beamPos = useRef(new THREE.Vector3(2.5, 2, 3.5));
+  const beamTarget = useRef(new THREE.Vector3(2, 0.8, 0));
 
   useEffect(() => {
     if (trigger > 0) {
-      const r = ref.current;
-      r.savedPos.copy(camera.position);
+      savedPos.current.copy(camera.position);
       if (controls) {
-        r.savedTarget.copy(controls.target);
+        savedTarget.current.copy((controls as unknown as { target: THREE.Vector3 }).target);
       }
-      r.progress = 0;
-      r.holdTimer = 0;
-      r.phase = "forward";
+      progress.current = 0;
+      holdTimer.current = 0;
+      phase.current = "forward";
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trigger]);
+  }, [trigger, camera, controls]);
 
   useFrame(() => {
-    const r = ref.current;
-    if (r.phase === "idle") return;
+    if (phase.current === "idle") return;
 
-    r.progress += 0.025;
-    const t = Math.min(r.progress, 1);
+    progress.current += 0.025;
+    const t = Math.min(progress.current, 1);
     const ease = t * t * (3 - 2 * t);
 
-    if (r.phase === "forward") {
-      camera.position.lerpVectors(r.savedPos, r.beamPos, ease);
+    if (phase.current === "forward") {
+      camera.position.lerpVectors(savedPos.current, beamPos.current, ease);
       if (controls) {
-        controls.target.lerpVectors(r.savedTarget, r.beamTarget, ease);
+        (controls as unknown as { target: THREE.Vector3 }).target.lerpVectors(
+          savedTarget.current,
+          beamTarget.current,
+          ease
+        );
       }
       if (t >= 1) {
-        r.progress = 0;
-        r.phase = "hold";
+        progress.current = 0;
+        phase.current = "hold";
       }
-    } else if (r.phase === "hold") {
-      r.holdTimer += 1 / 60;
-      if (r.holdTimer > 2) {
-        r.progress = 0;
-        r.phase = "back";
+    } else if (phase.current === "hold") {
+      holdTimer.current += 1 / 60;
+      if (holdTimer.current > 2) {
+        progress.current = 0;
+        phase.current = "back";
       }
-    } else if (r.phase === "back") {
-      camera.position.lerpVectors(r.beamPos, r.savedPos, ease);
+    } else if (phase.current === "back") {
+      camera.position.lerpVectors(beamPos.current, savedPos.current, ease);
       if (controls) {
-        controls.target.lerpVectors(r.beamTarget, r.savedTarget, ease);
+        (controls as unknown as { target: THREE.Vector3 }).target.lerpVectors(
+          beamTarget.current,
+          savedTarget.current,
+          ease
+        );
       }
       if (t >= 1) {
-        r.phase = "idle";
+        phase.current = "idle";
       }
     }
   });

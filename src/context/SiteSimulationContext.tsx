@@ -330,7 +330,7 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
     pushEvent("AUDIT", "info", "Scenario Reset", "Dashboard reset to baseline conditions.");
   }, [pushEvent]);
 
-  const scenarioStage = useMemo(() => {
+  const scenarioStage: ScenarioStage = useMemo(() => {
     const latestStage = scenarioEvents[scenarioEvents.length - 1]?.stage;
 
     if (
