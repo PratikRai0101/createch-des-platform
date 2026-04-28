@@ -47,5 +47,6 @@ The **Dynamic Engineering System (DES)** is a proof-of-concept platform designed
 - Shared scenario state is now managed through a global simulation provider.
 - A top-level scenario ribbon now guides users through Sense -> Detect -> Recalibrate -> Impact -> Audit.
 - Dashboard now supports Executive vs Engineer interpretation modes for clearer communication.
+- Digital twin now shows staged recalibration with baseline ghost geometry for before/after comparison.
 
 Built for L&T CreaTech Hackathon.

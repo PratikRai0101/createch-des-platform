@@ -34,6 +34,12 @@ export default function DigitalTwinCanvas(props: DigitalTwinCanvasProps) {
           <div className={`w-2 h-2 rounded-full ${props.aiOptimized ? 'bg-purple-500' : (props.status === 'CRITICAL' ? 'bg-red-500' : 'bg-green-500')}`}></div> 
           Generative Beam ({props.aiOptimized ? 'Recalibrated' : 'Live State'})
         </div>
+        {props.aiOptimized && (
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-2 h-2 rounded-full bg-indigo-200 border border-indigo-300"></div>
+            Baseline Beam (Before)
+          </div>
+        )}
         <div className="text-[10px] text-gray-400 mt-2 border-t border-white/10 pt-1">
           Scroll to zoom • Click & drag to rotate
         </div>

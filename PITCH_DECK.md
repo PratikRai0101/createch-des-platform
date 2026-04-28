@@ -105,7 +105,7 @@
 *   **Bullet Points:**
     *   Added a guided closed-loop scenario ribbon: Sense -> Detect -> Recalibrate -> Impact -> Audit.
     *   Added dual persona mode (Executive vs Engineer) so both decision-makers and technical reviewers can read the same live state differently.
-    *   Enhanced digital twin recalibration visuals with clearer before/after engineering context.
+    *   Enhanced digital twin recalibration visuals with staged motion and baseline ghost-beam comparison.
     *   Upgraded CV simulation for more realistic tracked events and explainable anomaly handoff.
     *   Introduced production-style AI event pipeline foundations for backend credibility.
 *   **Speaker Notes:** "Our semifinal prototype proved the concept. For finals, we focused on operational trust: clearer workflows for leadership, deeper engineering fidelity in the twin, and a stronger event-to-decision pipeline story that can scale into real deployment."
