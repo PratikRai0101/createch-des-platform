@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Activity, Terminal, Server, Wifi, WifiOff, AlertCircle, Camera, Focus } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import { useSiteSimulation } from "@/hooks/useSiteSimulation";
 
 const mockLogStream = [
   { ts: "14:02:33.401", level: "INFO", msg: "Node-7A connected. Handshake OK." },
@@ -15,6 +16,48 @@ const mockLogStream = [
 
 export default function IotSensorsPage() {
   const [logs, setLogs] = useState(mockLogStream);
+  const { scenarioEvents, injectDisaster, anomalyDetected, viewMode } = useSiteSimulation();
+
+  const cvTracks = useMemo(
+    () => [
+      {
+        label: "EXCAVATOR | ID-14 | 98%",
+        x: 24,
+        y: 55,
+        w: 230,
+        h: 60,
+        color: "border-emerald-400 text-emerald-400",
+        driftX: 4,
+        driftY: -3,
+        duration: 3.8,
+      },
+      {
+        label: "TRENCH EDGE | 78%",
+        x: 60,
+        y: 32,
+        w: 120,
+        h: 180,
+        color: "border-purple-400 text-purple-400",
+        driftX: -3,
+        driftY: 4,
+        duration: 4.2,
+      },
+      {
+        label: "WORKER CLUSTER | 84%",
+        x: 48,
+        y: 62,
+        w: 110,
+        h: 70,
+        color: "border-cyan-300 text-cyan-300",
+        driftX: 2,
+        driftY: 3,
+        duration: 4.6,
+      },
+    ],
+    []
+  );
+
+  const latestEvents = useMemo(() => scenarioEvents.slice(-4).reverse(), [scenarioEvents]);
 
   // Simulate scrolling logs
   useEffect(() => {
@@ -42,13 +85,19 @@ export default function IotSensorsPage() {
           <p className="text-xs text-gray-500 font-medium mt-0.5">Real-time Sensor Telemetry & Site YOLO Tracking</p>
         </div>
         <div className="flex gap-4 items-center">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
+            View: {viewMode === "executive" ? "Executive" : "Engineer"}
+          </div>
           <div className="flex items-center gap-2 text-xs font-bold text-green-700 bg-green-50 px-3 py-1.5 rounded-full border border-green-200">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
             1,244 Active Nodes
           </div>
-          <button className="px-4 py-2 text-sm font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg shadow-sm flex items-center gap-2 transition-colors">
+          <button
+            onClick={injectDisaster}
+            className="px-4 py-2 text-sm font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg shadow-sm flex items-center gap-2 transition-colors"
+          >
             <Server className="w-4 h-4" />
-            Provision New Node
+            Inject CV Anomaly
           </button>
         </div>
       </header>
@@ -73,7 +122,9 @@ export default function IotSensorsPage() {
               </div>
               
               {/* Fake Video Player Container */}
-              <div className="flex-1 bg-slate-900 rounded-xl relative overflow-hidden flex items-center justify-center border border-slate-700">
+              <div className={`flex-1 bg-slate-900 rounded-xl relative overflow-hidden flex items-center justify-center border ${
+                anomalyDetected ? "border-red-500/80" : "border-slate-700"
+              }`}>
                 {/* Background image mockup for the site */}
                 <div 
                   className="absolute inset-0 opacity-80 bg-cover bg-center mix-blend-luminosity"
@@ -84,14 +135,21 @@ export default function IotSensorsPage() {
                 <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
 
                 {/* YOLO Bounding Boxes (Animated) */}
-                {/* Repositioned to align with the new background image */}
-                <YoloBox label="EXCAVATOR 98%" x={24} y={55} w={230} h={60} color="border-emerald-400 text-emerald-400" />
-                <YoloBox label="TRENCH 78%" x={60} y={32} w={120} h={180} color="border-purple-400 text-purple-400" />
+                {cvTracks.map((track) => (
+                  <YoloBox key={track.label} {...track} />
+                ))}
 
                 {/* Tracking Reticle Center */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-30 text-white pointer-events-none">
                   <Focus className="w-24 h-24" />
                 </div>
+              </div>
+
+              <div className="mt-3 rounded-lg border border-slate-700 bg-slate-900/90 px-3 py-2 text-[11px] text-slate-300 font-mono">
+                <span className="text-slate-500">Inference Status:</span>{" "}
+                {anomalyDetected
+                  ? "Anomaly linked to recalibration workflow. Awaiting AI structural response."
+                  : "All tracked objects within operational safety envelope."}
               </div>
             </div>
           </div>
@@ -133,6 +191,18 @@ export default function IotSensorsPage() {
               
               {/* Terminal Scanline Effect */}
               <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,3px_100%] z-10 opacity-20"></div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+              <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Cross-System Event Timeline</h4>
+              <div className="space-y-2">
+                {latestEvents.map((event) => (
+                  <div key={event.id} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                    <p className="text-[11px] font-bold text-gray-700">{event.ts} • {event.stage}</p>
+                    <p className="text-xs text-gray-600 mt-0.5">{event.title}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -195,16 +265,28 @@ export default function IotSensorsPage() {
 }
 
 // Micro-component for the YOLO CV bounding boxes
-function YoloBox({ label, x, y, w, h, color }: any) {
+interface YoloBoxProps {
+  label: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  color: string;
+  driftX: number;
+  driftY: number;
+  duration: number;
+}
+
+function YoloBox({ label, x, y, w, h, color, driftX, driftY, duration }: YoloBoxProps) {
   return (
     <motion.div 
       className={`absolute border-2 ${color} bg-black/20 pointer-events-none`}
       style={{ left: `${x}%`, top: `${y}%`, width: w, height: h }}
       animate={{ 
-        x: [0, Math.random() * 10 - 5, 0], 
-        y: [0, Math.random() * 10 - 5, 0] 
+        x: [0, driftX, 0], 
+        y: [0, driftY, 0] 
       }}
-      transition={{ duration: 3 + Math.random() * 2, repeat: Infinity, ease: "easeInOut" }}
+      transition={{ duration, repeat: Infinity, ease: "easeInOut" }}
     >
       <div className={`absolute -top-5 left-[-2px] px-1 text-[9px] font-mono font-bold bg-slate-900 border ${color}`}>
         {label}
