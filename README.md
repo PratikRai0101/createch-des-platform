@@ -12,10 +12,18 @@ The **Dynamic Engineering System (DES)** is a proof-of-concept platform designed
 
 ### How to Run Locally
 1. Ensure you have Node.js installed.
-2. Navigate to this directory: `cd des-platform`
+2. Navigate to this directory: `cd createch-des-platform`
 3. Install dependencies: `npm install`
 4. Start the application: `npm run dev`
 5. Open your browser to `http://localhost:3000`
+
+### Run the Python Generative Backend (Optional but Recommended)
+1. Open a second terminal.
+2. Navigate to backend: `cd backend`
+3. Create and activate a virtual environment.
+4. Install dependencies: `pip install -r requirements.txt`
+5. Start server: `uvicorn main:app --reload --port 8000`
+6. Frontend will call `http://127.0.0.1:8000/api/optimize-geometry` from the Generative Design page.
 
 ### Demo Script / Pitch
 - **Step 1:** Click **"Start Live Simulation"** to begin data ingestion.
@@ -29,5 +37,10 @@ The **Dynamic Engineering System (DES)** is a proof-of-concept platform designed
 - Styling: Tailwind CSS v4
 - Charts: Recharts
 - Icons: Lucide React
+
+### Finals Upgrade Track
+- We are now in a finals hardening sprint focused on clarity, realism, and connected workflows.
+- Track ongoing upgrades in `FINALS_BUILD_LOG.md`.
+- Key upgrade themes: guided scenario flow, stronger 3D recalibration effects, polished CV simulation, and production-style AI event pipeline.
 
 Built for L&T CreaTech Hackathon.

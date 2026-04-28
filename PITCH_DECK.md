@@ -97,3 +97,14 @@
 *   **Headline:** The Future of Dynamic Engineering
 *   **Sub-headline:** Thank You / Q&A
 *   **Speaker Notes:** "We are ready to take L&T’s execution to the autonomous edge. Thank you, and we’d love to answer your questions."
+
+---
+
+## Finals Upgrade Delta (Top-8 to Winner)
+*   **Headline:** What We Improved For Finals
+*   **Bullet Points:**
+    *   Added a guided closed-loop scenario ribbon: Sense -> Detect -> Recalibrate -> Impact -> Audit.
+    *   Enhanced digital twin recalibration visuals with clearer before/after engineering context.
+    *   Upgraded CV simulation for more realistic tracked events and explainable anomaly handoff.
+    *   Introduced production-style AI event pipeline foundations for backend credibility.
+*   **Speaker Notes:** "Our semifinal prototype proved the concept. For finals, we focused on operational trust: clearer workflows for leadership, deeper engineering fidelity in the twin, and a stronger event-to-decision pipeline story that can scale into real deployment."
