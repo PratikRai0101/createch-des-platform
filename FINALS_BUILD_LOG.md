@@ -35,12 +35,11 @@ Ship a connected closed-loop demo: Sense -> Detect -> Recalibrate -> Impact -> A
 - [x] Added 3D tolerance envelope and load-vector annotations for faster engineering diagnosis.
 - [x] Added reconnect backoff strategy for SSE transport interruptions.
 - [x] Added analytics event-ledger JSON export for audit handoff.
+- [x] Added 3D camera flythrough animation for recalibration explanation.
+- [x] Added tradeoff sliders in generative design for real-time option re-ranking.
+- [x] Added incident replay mode on CV page with timeline scrubber.
 
 ### In Progress
-- [ ] Add stream health banner with reconnect attempt counter.
-- [ ] Bundle PDF and JSON exports into a single compliance packet.
-- [ ] Add confidence-band visualization tied to optimization uncertainty.
-
 
 ### Next
 - [ ] Add final presentation mode that locks navigation and runs replay + scripted highlights.
@@ -62,3 +61,4 @@ Ship a connected closed-loop demo: Sense -> Detect -> Recalibrate -> Impact -> A
 - 2026-04-28: Added load-vector and tolerance-envelope overlays in the digital twin scene.
 - 2026-04-28: Added exponential backoff reconnection for resilient SSE streaming.
 - 2026-04-28: Added downloadable JSON event ledger from analytics for compliance sharing.
+- 2026-04-28: Added 3D camera flythrough, tradeoff sliders, and incident replay mode for finals.

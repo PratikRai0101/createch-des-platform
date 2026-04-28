@@ -63,5 +63,8 @@ The **Dynamic Engineering System (DES)** is a proof-of-concept platform designed
 - Backend now provides an SSE stream for near-real-time event propagation to the frontend.
 - Digital twin now includes tolerance-envelope and load-vector overlays for clearer engineering diagnostics.
 - Analytics now supports JSON event-ledger export for audit/compliance handoff.
+- 3D digital twin has camera flythrough animation triggered on recalibration for explainable transitions.
+- Generative Design page includes tradeoff weight sliders that re-rank options in real time.
+- IoT/CV page includes an incident replay mode with timeline scrubber for anomaly time-lapses.
 
 Built for L&T CreaTech Hackathon.
