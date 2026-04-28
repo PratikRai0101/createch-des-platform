@@ -25,6 +25,10 @@ The **Dynamic Engineering System (DES)** is a proof-of-concept platform designed
 5. Start server: `uvicorn main:app --reload --port 8000`
 6. Frontend will call `http://127.0.0.1:8000/api/optimize-geometry` from the Generative Design page.
 
+### Optional Frontend API Base URL
+- Set `NEXT_PUBLIC_AI_API_BASE_URL` if backend is not running on default localhost:8000.
+- Example: `NEXT_PUBLIC_AI_API_BASE_URL=http://127.0.0.1:8000`
+
 ### Demo Script / Pitch
 - **Step 1:** Click **"Start Live Simulation"** to begin data ingestion.
 - **Step 2:** Watch the **Soil Bearing Capacity** drop over time. Once it hits a critical threshold, an anomaly alert is fired because site conditions don't match the initial CAD assumptions.
@@ -49,5 +53,6 @@ The **Dynamic Engineering System (DES)** is a proof-of-concept platform designed
 - Dashboard now supports Executive vs Engineer interpretation modes for clearer communication.
 - Digital twin now shows staged recalibration with baseline ghost geometry for before/after comparison.
 - CV dashboard now includes stable tracked objects and a linked event timeline from the shared scenario engine.
+- Backend now exposes deterministic optimization traces and an event-ingest API for pipeline-style demo flow.
 
 Built for L&T CreaTech Hackathon.

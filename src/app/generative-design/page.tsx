@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Cpu, Settings, Save, RefreshCw, Layers, SlidersHorizontal, Share2, Play, Zap, CheckCircle2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Cpu, RefreshCw, Layers, SlidersHorizontal, Play, Zap, CheckCircle2 } from "lucide-react";
+import { motion } from "framer-motion";
 import DigitalTwinCanvas from "@/components/DigitalTwinCanvas";
 
 // Type matching our Python API
@@ -14,7 +14,16 @@ interface GenerativeOption {
   carbon_tco2e: number;
   construction_time_days: number;
   confidence_score: number;
+  reason: string;
 }
+
+interface OptimizationApiResponse {
+  options: GenerativeOption[];
+  recommended_option_id: string;
+  decision_trace: string[];
+}
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_AI_API_BASE_URL ?? "http://127.0.0.1:8000";
 
 export default function GenerativeDesignPage() {
   const [activeModel, setActiveModel] = useState("structural");
@@ -28,14 +37,18 @@ export default function GenerativeDesignPage() {
   const [isComputing, setIsComputing] = useState(false);
   const [options, setOptions] = useState<GenerativeOption[]>([]);
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
+  const [decisionTrace, setDecisionTrace] = useState<string[]>([]);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const runGenerativeOptimization = async () => {
     setIsComputing(true);
     setOptions([]);
     setSelectedOptionId(null);
+    setDecisionTrace([]);
+    setApiError(null);
     
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/optimize-geometry", {
+      const res = await fetch(`${API_BASE_URL}/api/optimize-geometry`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -46,18 +59,41 @@ export default function GenerativeDesignPage() {
           safety_factor: safetyFactor
         })
       });
+
+      if (!res.ok) {
+        throw new Error(`Optimization API failed with status ${res.status}`);
+      }
       
-      const data = await res.json();
+      const data: OptimizationApiResponse = await res.json();
       
       // Simulate computation time for dramatic effect
       setTimeout(() => {
         setOptions(data.options);
         setSelectedOptionId(data.recommended_option_id);
+        setDecisionTrace(data.decision_trace ?? []);
         setIsComputing(false);
       }, 2500);
+
+      void fetch(`${API_BASE_URL}/api/events/ingest`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source: "optimization",
+          stage: "RECALIBRATE",
+          severity: "info",
+          title: "Generative optimization requested from UI",
+          detail: "Frontend requested deterministic option set for active constraints.",
+          context: {
+            deviation_mm: deviation,
+            soil_bearing_capacity: soilCapacity,
+            safety_factor: safetyFactor,
+          },
+        }),
+      }).catch(() => undefined);
       
     } catch (err) {
       console.error("Failed to fetch from AI API:", err);
+      setApiError("Unable to reach the AI backend. Start FastAPI or check NEXT_PUBLIC_AI_API_BASE_URL.");
       setIsComputing(false);
     }
   };
@@ -156,7 +192,7 @@ export default function GenerativeDesignPage() {
               <div className="p-8 border-2 border-dashed border-gray-200 rounded-xl text-center text-gray-500 flex flex-col items-center justify-center min-h-[150px]">
                 <Cpu className="w-8 h-8 text-gray-300 mb-2" />
                 <p className="text-sm font-medium">Awaiting parameters.</p>
-                <p className="text-xs mt-1">Click "Run Generative Optimization" to invoke the Python ML backend.</p>
+                <p className="text-xs mt-1">Click Run Generative Optimization to invoke the Python ML backend.</p>
               </div>
             ) : isComputing ? (
               <div className="p-8 border border-purple-100 bg-purple-50/50 rounded-xl text-center flex flex-col items-center justify-center min-h-[150px]">
@@ -167,7 +203,7 @@ export default function GenerativeDesignPage() {
                 <p className="text-xs text-purple-600 mt-1">Running 10,000 Monte Carlo simulations via Python Backend.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
                 {options.map((opt) => (
                   <div 
                     key={opt.id}
@@ -177,14 +213,15 @@ export default function GenerativeDesignPage() {
                         ? "border-purple-500 bg-purple-50 shadow-md scale-[1.02]" 
                         : "border-gray-100 hover:border-purple-200 hover:bg-gray-50"
                     }`}
-                  >
-                    {selectedOptionId === opt.id && (
+                    >
+                      {selectedOptionId === opt.id && (
                       <div className="absolute -top-3 -right-3 bg-purple-500 text-white rounded-full p-1 shadow-lg">
                         <CheckCircle2 className="w-4 h-4" />
                       </div>
-                    )}
-                    <h4 className="font-bold text-gray-800 text-sm mb-3">{opt.name}</h4>
-                    <div className="space-y-2 text-xs">
+                      )}
+                      <h4 className="font-bold text-gray-800 text-sm mb-3">{opt.name}</h4>
+                      <p className="text-[11px] text-gray-500 mb-3 leading-relaxed">{opt.reason}</p>
+                      <div className="space-y-2 text-xs">
                       <div className="flex justify-between">
                         <span className="text-gray-500">Z-Depth</span>
                         <span className="font-mono font-bold text-blue-600">{opt.depth_m * 1000}mm</span>
@@ -204,6 +241,23 @@ export default function GenerativeDesignPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {apiError && (
+              <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
+                {apiError}
+              </div>
+            )}
+
+            {decisionTrace.length > 0 && (
+              <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50/40 p-4">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-blue-700 mb-2">Decision Trace</h4>
+                <ul className="space-y-1.5 text-xs text-blue-900 font-medium">
+                  {decisionTrace.map((step) => (
+                    <li key={step}>• {step}</li>
+                  ))}
+                </ul>
               </div>
             )}
           </div>
@@ -249,7 +303,17 @@ export default function GenerativeDesignPage() {
   );
 }
 
-function ParameterSlider({ label, value, min, max, step = "1", val, setVal }: any) {
+interface ParameterSliderProps {
+  label: string;
+  value: string;
+  min: string;
+  max: string;
+  step?: string;
+  val: number;
+  setVal: (value: number) => void;
+}
+
+function ParameterSlider({ label, value, min, max, step = "1", val, setVal }: ParameterSliderProps) {
   return (
     <div>
       <div className="flex justify-between items-end mb-2">

@@ -107,5 +107,5 @@
     *   Added dual persona mode (Executive vs Engineer) so both decision-makers and technical reviewers can read the same live state differently.
     *   Enhanced digital twin recalibration visuals with staged motion and baseline ghost-beam comparison.
     *   Upgraded CV simulation with stable object tracks, clearer IDs, and linked anomaly timeline handoff.
-    *   Introduced production-style AI event pipeline foundations for backend credibility.
+    *   Introduced production-style AI event pipeline foundations with deterministic optimization traces and event-ingest endpoints.
 *   **Speaker Notes:** "Our semifinal prototype proved the concept. For finals, we focused on operational trust: clearer workflows for leadership, deeper engineering fidelity in the twin, and a stronger event-to-decision pipeline story that can scale into real deployment."

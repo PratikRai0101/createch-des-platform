@@ -21,11 +21,15 @@ Ship a connected closed-loop demo: Sense -> Detect -> Recalibrate -> Impact -> A
 - [x] Upgraded digital twin with staged recalibration animation and baseline ghost overlay.
 - [x] Polished CV simulation with stable track IDs and deterministic motion profiles.
 - [x] Added cross-system event timeline panel on the IoT/CV page.
+- [x] Added deterministic backend optimization trace output.
+- [x] Added backend event-ingest and latest-events API endpoints.
+- [x] Updated generative UI to use env-based API URL + decision trace rendering.
 
 ### In Progress
 - [ ] Add actionable event timeline component tied to anomaly lifecycle.
 - [ ] Add richer structural annotations (load vectors, tolerance envelope, confidence band).
 - [ ] Wire stage/event context into analytics and execution ROI cards.
+- [ ] Introduce realtime stream transport (SSE/WebSocket) instead of polling.
 
 ### Next
 - [ ] Upgrade digital twin to staged recalibration with before/after overlays.
@@ -38,3 +42,4 @@ Ship a connected closed-loop demo: Sense -> Detect -> Recalibrate -> Impact -> A
 - 2026-04-28: Introduced global scenario context and finals storytelling ribbon.
 - 2026-04-28: Improved 3D twin recalibration storytelling with before/after geometry overlays.
 - 2026-04-28: Connected CV page to scenario context and synchronized event timeline visibility.
+- 2026-04-28: Added deterministic optimization traces and event ingestion API backbone.
