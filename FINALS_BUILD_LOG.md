@@ -15,10 +15,13 @@ Ship a connected closed-loop demo: Sense -> Detect -> Recalibrate -> Impact -> A
 
 ### Done
 - [x] Initialized finals build log and shared execution principles.
+- [x] Added shared `SiteSimulationProvider` for cross-page scenario state.
+- [x] Added top scenario ribbon with guided stages and view-mode toggle.
+- [x] Added executive vs engineer interpretation block on the command center.
 
 ### In Progress
-- [ ] Introduce shared scenario state across pages.
-- [ ] Add scenario step ribbon for guided storytelling.
+- [ ] Wire stage/event context into CV and analytics pages.
+- [ ] Add actionable event timeline component tied to anomaly lifecycle.
 
 ### Next
 - [ ] Upgrade digital twin to staged recalibration with before/after overlays.
@@ -28,3 +31,4 @@ Ship a connected closed-loop demo: Sense -> Detect -> Recalibrate -> Impact -> A
 
 ## Change Ledger
 - 2026-04-28: Sprint log started.
+- 2026-04-28: Introduced global scenario context and finals storytelling ribbon.

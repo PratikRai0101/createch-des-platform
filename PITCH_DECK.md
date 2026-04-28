@@ -104,6 +104,7 @@
 *   **Headline:** What We Improved For Finals
 *   **Bullet Points:**
     *   Added a guided closed-loop scenario ribbon: Sense -> Detect -> Recalibrate -> Impact -> Audit.
+    *   Added dual persona mode (Executive vs Engineer) so both decision-makers and technical reviewers can read the same live state differently.
     *   Enhanced digital twin recalibration visuals with clearer before/after engineering context.
     *   Upgraded CV simulation for more realistic tracked events and explainable anomaly handoff.
     *   Introduced production-style AI event pipeline foundations for backend credibility.

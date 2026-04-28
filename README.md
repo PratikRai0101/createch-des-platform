@@ -43,4 +43,9 @@ The **Dynamic Engineering System (DES)** is a proof-of-concept platform designed
 - Track ongoing upgrades in `FINALS_BUILD_LOG.md`.
 - Key upgrade themes: guided scenario flow, stronger 3D recalibration effects, polished CV simulation, and production-style AI event pipeline.
 
+### Finals Upgrades Implemented So Far
+- Shared scenario state is now managed through a global simulation provider.
+- A top-level scenario ribbon now guides users through Sense -> Detect -> Recalibrate -> Impact -> Audit.
+- Dashboard now supports Executive vs Engineer interpretation modes for clearer communication.
+
 Built for L&T CreaTech Hackathon.

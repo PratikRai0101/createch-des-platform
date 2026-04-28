@@ -29,6 +29,7 @@ export default function Home() {
     anomalyDetected,
     aiOptimized,
     deviationHistory,
+    viewMode,
     triggerGenerativeRedesign,
     resetSimulation,
     injectDisaster
@@ -57,7 +58,11 @@ export default function Home() {
       <header className="bg-white border-b border-gray-200/80 px-8 py-4 flex justify-between items-center sticky top-0 z-10 shadow-sm backdrop-blur-md bg-white/90">
         <div>
           <h2 className="text-xl font-bold text-gray-800">Site Execution Dashboard</h2>
-          <p className="text-xs text-gray-500 font-medium mt-0.5">Real-time Structural Recalibration via Edge Node</p>
+          <p className="text-xs text-gray-500 font-medium mt-0.5">
+            {viewMode === "executive"
+              ? "Executive summary of anomaly response and savings impact"
+              : "Engineering telemetry and structural recalibration diagnostics"}
+          </p>
         </div>
         <div className="flex gap-3">
           <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border mr-2 ${
@@ -266,6 +271,31 @@ export default function Home() {
               >
                 <strong className="text-red-900">System Alert:</strong> Subsurface conditions differ from design assumptions. Foundation rework risk high. Awaiting engineering approval or generative override.
               </motion.div>
+            )}
+          </div>
+
+          {/* Deviation Timeline Chart */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
+            {viewMode === "executive" ? (
+              <>
+                <p className="text-[11px] uppercase tracking-wider font-bold text-gray-500 mb-2">Executive Interpretation</p>
+                <p className="text-sm font-semibold text-gray-800 leading-relaxed">
+                  {aiOptimized
+                    ? "AI redesign accepted. Cost overrun and schedule impact are now under control."
+                    : anomalyDetected
+                      ? "Risk is rising. Trigger AI recalibration to prevent rework escalation."
+                      : "Project is stable. No intervention required at this stage."}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-[11px] uppercase tracking-wider font-bold text-gray-500 mb-2">Engineering Interpretation</p>
+                <p className="text-xs text-gray-700 leading-relaxed font-medium">
+                  {aiOptimized
+                    ? `Depth adjusted from ${(baseDepth * 1000).toFixed(0)}mm to ${(newDepth * 1000).toFixed(0)}mm. Deviation normalized to baseline envelope.`
+                    : `Current deviation at ${deviation.toFixed(1)}mm with soil bearing ${Math.round(soilBearingCapacity)}kPa. Critical threshold: 20mm.`}
+                </p>
+              </>
             )}
           </div>
 
