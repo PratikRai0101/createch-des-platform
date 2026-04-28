@@ -30,10 +30,11 @@ Ship a connected closed-loop demo: Sense -> Detect -> Recalibrate -> Impact -> A
 - [x] Added expandable shared scenario timeline panel in the top ribbon.
 - [x] Resolved lint blockers; frontend lint now passes cleanly.
 - [x] Added one-click replay mode for end-to-end finals storytelling.
+- [x] Added backend event sync polling with simulation fallback indicator in the scenario ribbon.
 
 ### In Progress
 - [ ] Add richer structural annotations (load vectors, tolerance envelope, confidence band).
-- [ ] Introduce realtime stream transport (SSE/WebSocket) instead of polling.
+- [ ] Replace polling with SSE/WebSocket stream transport.
 
 ### Next
 - [ ] Upgrade digital twin to staged recalibration with before/after overlays.
@@ -52,3 +53,4 @@ Ship a connected closed-loop demo: Sense -> Detect -> Recalibrate -> Impact -> A
 - 2026-04-28: Added global scenario controls and expanded timeline for guided live demo operation.
 - 2026-04-28: Cleared final lint blocker on command center effect lifecycle.
 - 2026-04-28: Added automated replay sequence for deterministic live demonstration.
+- 2026-04-28: Enabled periodic backend event sync with automatic simulation fallback.

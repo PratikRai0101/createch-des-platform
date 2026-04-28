@@ -59,6 +59,7 @@ export default function TopScenarioBar() {
   const {
     scenarioStage,
     scenarioEvents,
+    pipelineConnected,
     viewMode,
     setViewMode,
     isSimulating,
@@ -117,7 +118,7 @@ export default function TopScenarioBar() {
             Finals Scenario Flow
           </span>
           <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-slate-600">
-            Telemetry: Simulated
+            Pipeline: {pipelineConnected ? "API Synced" : "Simulation Fallback"}
           </span>
         </div>
 

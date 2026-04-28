@@ -32,6 +32,7 @@ interface SiteSimulationContextValue {
   viewMode: ViewMode;
   setViewMode: (value: ViewMode) => void;
   scenarioEvents: ScenarioEvent[];
+  pipelineConnected: boolean;
   triggerGenerativeRedesign: () => void;
   resetSimulation: () => void;
   injectDisaster: () => void;
@@ -43,6 +44,16 @@ const createInitialHistory = () =>
   Array.from({ length: 10 }).map((_, i) => ({ time: `T-${10 - i}`, dev: 0, safe: 20 }));
 
 const stamp = () => new Date().toISOString().substring(11, 19);
+const API_BASE_URL = process.env.NEXT_PUBLIC_AI_API_BASE_URL ?? "http://127.0.0.1:8000";
+
+interface PipelineEvent {
+  id: string;
+  ts: string;
+  stage: ScenarioStage;
+  severity: EventSeverity;
+  title: string;
+  detail: string;
+}
 
 export function SiteSimulationProvider({ children }: { children: React.ReactNode }) {
   const [isSimulating, setIsSimulating] = useState(false);
@@ -65,6 +76,7 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
       detail: "Simulation stack initialized in presentation mode.",
     },
   ]);
+  const [pipelineConnected, setPipelineConnected] = useState(false);
 
   const pushEvent = useCallback(
     (stage: ScenarioStage, severity: EventSeverity, title: string, detail: string) => {
@@ -132,6 +144,55 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
       }
     };
   }, [isSimulating, aiOptimized, baseDepth, pushEvent]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const pullPipelineEvents = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/events/latest?limit=12`);
+
+        if (!response.ok) {
+          throw new Error(`Pipeline endpoint status: ${response.status}`);
+        }
+
+        const records: PipelineEvent[] = await response.json();
+
+        if (cancelled) {
+          return;
+        }
+
+        setPipelineConnected(true);
+        setScenarioEvents((current) => {
+          const merged = new Map(current.map((event) => [event.id, event]));
+          records.forEach((record) => {
+            merged.set(record.id, {
+              id: record.id,
+              ts: record.ts,
+              stage: record.stage,
+              severity: record.severity,
+              title: record.title,
+              detail: record.detail,
+            });
+          });
+
+          return Array.from(merged.values()).slice(-30);
+        });
+      } catch {
+        if (!cancelled) {
+          setPipelineConnected(false);
+        }
+      }
+    };
+
+    pullPipelineEvents();
+    const interval = window.setInterval(pullPipelineEvents, 5000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, []);
 
   const updateSimulationState = useCallback(
     (value: boolean) => {
@@ -240,6 +301,7 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
       viewMode,
       setViewMode,
       scenarioEvents,
+      pipelineConnected,
       triggerGenerativeRedesign,
       resetSimulation,
       injectDisaster,
@@ -259,6 +321,7 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
       viewMode,
       setViewMode,
       scenarioEvents,
+      pipelineConnected,
       triggerGenerativeRedesign,
       resetSimulation,
       injectDisaster,

@@ -59,5 +59,6 @@ The **Dynamic Engineering System (DES)** is a proof-of-concept platform designed
 - Scenario ribbon now includes one-click demo controls and an expandable shared timeline across pages.
 - Frontend lint checks now pass cleanly for a stable finals branch baseline.
 - Scenario ribbon now includes a Replay Scenario action to run the full Sense -> Detect -> Recalibrate loop automatically.
+- Scenario ribbon now shows backend pipeline sync status and falls back gracefully to simulation mode.
 
 Built for L&T CreaTech Hackathon.
