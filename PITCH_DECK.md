@@ -110,6 +110,7 @@
     *   Linked analytics KPIs to live scenario state so ROI metrics update with anomaly and optimization events.
     *   Synced execution logistics and schedule variance indicators to real-time scenario stage.
     *   Added a global demo control strip and shared event timeline for faster, clearer live storytelling.
+    *   Added one-click replay mode to run a deterministic end-to-end scenario during finals presentation.
     *   Introduced production-style AI event pipeline foundations with deterministic optimization traces and event-ingest endpoints.
     *   Hardened finals branch quality with lint-clean frontend baseline for reliable live demo execution.
 *   **Speaker Notes:** "Our semifinal prototype proved the concept. For finals, we focused on operational trust: clearer workflows for leadership, deeper engineering fidelity in the twin, and a stronger event-to-decision pipeline story that can scale into real deployment."

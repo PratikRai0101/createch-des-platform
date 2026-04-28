@@ -12,7 +12,7 @@ import {
   Zap,
   Radar,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { useSiteSimulation } from "@/hooks/useSiteSimulation";
 import { SCENARIO_STAGES, type EventSeverity, type ScenarioStage } from "@/types/scenario";
@@ -70,9 +70,44 @@ export default function TopScenarioBar() {
     aiOptimized,
   } = useSiteSimulation();
   const [showTimeline, setShowTimeline] = useState(false);
+  const [isReplaying, setIsReplaying] = useState(false);
+  const replayTimersRef = useRef<number[]>([]);
 
   const activeIndex = useMemo(() => SCENARIO_STAGES.indexOf(scenarioStage), [scenarioStage]);
   const latestEvent = scenarioEvents[scenarioEvents.length - 1];
+
+  useEffect(() => {
+    return () => {
+      replayTimersRef.current.forEach((timerId) => {
+        window.clearTimeout(timerId);
+      });
+      replayTimersRef.current = [];
+    };
+  }, []);
+
+  const runReplayScenario = () => {
+    if (isReplaying) {
+      return;
+    }
+
+    replayTimersRef.current.forEach((timerId) => {
+      window.clearTimeout(timerId);
+    });
+    replayTimersRef.current = [];
+
+    setIsReplaying(true);
+    resetSimulation();
+
+    replayTimersRef.current.push(
+      window.setTimeout(() => setIsSimulating(true), 500),
+      window.setTimeout(() => injectDisaster(), 3500),
+      window.setTimeout(() => triggerGenerativeRedesign(), 6500),
+      window.setTimeout(() => {
+        setIsSimulating(false);
+        setIsReplaying(false);
+      }, 9000)
+    );
+  };
 
   return (
     <section className="border-b border-slate-200 bg-white px-6 py-3">
@@ -148,6 +183,18 @@ export default function TopScenarioBar() {
         >
           <RotateCcw className="h-3.5 w-3.5" />
           Reset
+        </button>
+        <button
+          onClick={runReplayScenario}
+          disabled={isReplaying}
+          className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] font-bold ${
+            isReplaying
+              ? "border-blue-200 bg-blue-100 text-blue-500"
+              : "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
+          }`}
+        >
+          <Play className="h-3.5 w-3.5" />
+          {isReplaying ? "Replay Running" : "Replay Scenario"}
         </button>
       </div>
 
