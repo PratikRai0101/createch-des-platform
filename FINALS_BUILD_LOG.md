@@ -33,15 +33,18 @@ Ship a connected closed-loop demo: Sense -> Detect -> Recalibrate -> Impact -> A
 - [x] Added backend event sync polling with simulation fallback indicator in the scenario ribbon.
 - [x] Added SSE event stream endpoint and frontend live subscription support.
 - [x] Added 3D tolerance envelope and load-vector annotations for faster engineering diagnosis.
+- [x] Added reconnect backoff strategy for SSE transport interruptions.
+- [x] Added analytics event-ledger JSON export for audit handoff.
 
 ### In Progress
-- [ ] Add robust reconnect/backoff strategy for stream interruptions.
+- [ ] Add stream health banner with reconnect attempt counter.
+- [ ] Bundle PDF and JSON exports into a single compliance packet.
+- [ ] Add confidence-band visualization tied to optimization uncertainty.
+
 
 ### Next
-- [ ] Upgrade digital twin to staged recalibration with before/after overlays.
-- [ ] Polish CV feed with stable object tracks and event timeline.
-- [ ] Implement event schema + backend ingest endpoints + realtime stream.
-- [ ] Wire analytics and audit panel to scenario events.
+- [ ] Add final presentation mode that locks navigation and runs replay + scripted highlights.
+- [ ] Capture a deterministic demo dataset for offline fallback during finals presentation.
 
 ## Change Ledger
 - 2026-04-28: Sprint log started.
@@ -57,3 +60,5 @@ Ship a connected closed-loop demo: Sense -> Detect -> Recalibrate -> Impact -> A
 - 2026-04-28: Enabled periodic backend event sync with automatic simulation fallback.
 - 2026-04-28: Added near-real-time SSE event transport alongside polling fallback.
 - 2026-04-28: Added load-vector and tolerance-envelope overlays in the digital twin scene.
+- 2026-04-28: Added exponential backoff reconnection for resilient SSE streaming.
+- 2026-04-28: Added downloadable JSON event ledger from analytics for compliance sharing.

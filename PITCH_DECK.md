@@ -115,5 +115,6 @@
     *   Added backend sync visibility in the command ribbon with automatic simulation fallback when API is offline.
     *   Enabled near-real-time event propagation via backend SSE stream for tighter loop closure.
     *   Added tolerance-envelope and load-vector overlays in 3D view for instant engineering interpretability.
+    *   Added downloadable JSON event ledger for compliance and management handoff.
     *   Hardened finals branch quality with lint-clean frontend baseline for reliable live demo execution.
 *   **Speaker Notes:** "Our semifinal prototype proved the concept. For finals, we focused on operational trust: clearer workflows for leadership, deeper engineering fidelity in the twin, and a stronger event-to-decision pipeline story that can scale into real deployment."

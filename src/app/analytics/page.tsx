@@ -24,6 +24,23 @@ export default function AnalyticsPage() {
   const costSavings = aiOptimized ? "₹1.42 Cr" : anomalyDetected ? "₹0.86 Cr" : "₹1.10 Cr";
   const reworkReduction = aiOptimized ? "94%" : anomalyDetected ? "62%" : "81%";
 
+  const exportAuditTrail = () => {
+    const payload = {
+      exported_at: new Date().toISOString(),
+      scenario_state: aiOptimized ? "IMPACT" : anomalyDetected ? "RECALIBRATE" : "SENSE/DETECT",
+      total_events: scenarioEvents.length,
+      events: scenarioEvents,
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `des-audit-trail-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full w-full bg-[#f8fafc]">
       <header className="bg-white border-b border-gray-200/80 px-8 py-4 flex justify-between items-center sticky top-0 z-10 shadow-sm backdrop-blur-md bg-white/90">
@@ -44,6 +61,12 @@ export default function AnalyticsPage() {
             <option>Last 12 Months</option>
             <option>Project Lifetime</option>
           </select>
+          <button
+            onClick={exportAuditTrail}
+            className="px-4 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+          >
+            Export Event Ledger (.json)
+          </button>
           <button onClick={() => window.print()} className="px-4 py-2 text-sm font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg shadow-sm transition-colors print:hidden">
             Export Report (.pdf)
           </button>

@@ -200,40 +200,66 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
 
   useEffect(() => {
     let stream: EventSource | null = null;
+    let reconnectTimer: number | null = null;
+    let disposed = false;
+    let reconnectAttempts = 0;
 
-    try {
-      stream = new EventSource(`${API_BASE_URL}/api/events/stream`);
+    const connectStream = () => {
+      if (disposed) {
+        return;
+      }
 
-      stream.onmessage = (message) => {
-        try {
-          const parsed = JSON.parse(message.data) as Partial<PipelineEvent>;
+      try {
+        stream = new EventSource(`${API_BASE_URL}/api/events/stream`);
 
-          if (
-            parsed.id &&
-            parsed.ts &&
-            parsed.stage &&
-            parsed.severity &&
-            parsed.title &&
-            parsed.detail
-          ) {
-            mergePipelineRecords([parsed as PipelineEvent]);
-            setPipelineConnected(true);
+        stream.onopen = () => {
+          reconnectAttempts = 0;
+          setPipelineConnected(true);
+        };
+
+        stream.onmessage = (message) => {
+          try {
+            const parsed = JSON.parse(message.data) as Partial<PipelineEvent>;
+
+            if (
+              parsed.id &&
+              parsed.ts &&
+              parsed.stage &&
+              parsed.severity &&
+              parsed.title &&
+              parsed.detail
+            ) {
+              mergePipelineRecords([parsed as PipelineEvent]);
+              setPipelineConnected(true);
+            }
+          } catch {
+            // Ignore malformed SSE messages and continue fallback polling.
           }
-        } catch {
-          // Ignore malformed SSE events and continue polling fallback.
-        }
-      };
+        };
 
-      stream.onerror = () => {
+        stream.onerror = () => {
+          setPipelineConnected(false);
+          stream?.close();
+
+          if (!disposed) {
+            const delay = Math.min(30000, 1000 * 2 ** reconnectAttempts);
+            reconnectAttempts += 1;
+            reconnectTimer = window.setTimeout(connectStream, delay);
+          }
+        };
+      } catch {
         setPipelineConnected(false);
-        stream?.close();
-      };
-    } catch {
-      setPipelineConnected(false);
-    }
+      }
+    };
+
+    connectStream();
 
     return () => {
+      disposed = true;
       stream?.close();
+      if (reconnectTimer) {
+        window.clearTimeout(reconnectTimer);
+      }
     };
   }, [mergePipelineRecords]);
 
