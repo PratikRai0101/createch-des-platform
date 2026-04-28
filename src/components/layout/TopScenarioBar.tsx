@@ -6,9 +6,13 @@ import {
   BrainCircuit,
   CheckCircle2,
   ClipboardCheck,
+  Play,
+  Pause,
+  RotateCcw,
+  Zap,
   Radar,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { useSiteSimulation } from "@/hooks/useSiteSimulation";
 import { SCENARIO_STAGES, type EventSeverity, type ScenarioStage } from "@/types/scenario";
@@ -52,7 +56,20 @@ const severityClasses: Record<EventSeverity, string> = {
 };
 
 export default function TopScenarioBar() {
-  const { scenarioStage, scenarioEvents, viewMode, setViewMode } = useSiteSimulation();
+  const {
+    scenarioStage,
+    scenarioEvents,
+    viewMode,
+    setViewMode,
+    isSimulating,
+    setIsSimulating,
+    injectDisaster,
+    triggerGenerativeRedesign,
+    resetSimulation,
+    anomalyDetected,
+    aiOptimized,
+  } = useSiteSimulation();
+  const [showTimeline, setShowTimeline] = useState(false);
 
   const activeIndex = useMemo(() => SCENARIO_STAGES.indexOf(scenarioStage), [scenarioStage]);
   const latestEvent = scenarioEvents[scenarioEvents.length - 1];
@@ -69,28 +86,69 @@ export default function TopScenarioBar() {
           </span>
         </div>
 
-        <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+        <div className="flex items-center gap-2">
+          <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+            <button
+              onClick={() => setViewMode("executive")}
+              className={`rounded-md px-3 py-1.5 text-xs font-bold transition-colors ${
+                viewMode === "executive"
+                  ? "bg-white text-slate-800 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              Executive View
+            </button>
+            <button
+              onClick={() => setViewMode("engineer")}
+              className={`rounded-md px-3 py-1.5 text-xs font-bold transition-colors ${
+                viewMode === "engineer"
+                  ? "bg-white text-slate-800 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              Engineer View
+            </button>
+          </div>
           <button
-            onClick={() => setViewMode("executive")}
-            className={`rounded-md px-3 py-1.5 text-xs font-bold transition-colors ${
-              viewMode === "executive"
-                ? "bg-white text-slate-800 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
-            }`}
+            onClick={() => setShowTimeline((prev) => !prev)}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50"
           >
-            Executive View
-          </button>
-          <button
-            onClick={() => setViewMode("engineer")}
-            className={`rounded-md px-3 py-1.5 text-xs font-bold transition-colors ${
-              viewMode === "engineer"
-                ? "bg-white text-slate-800 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            Engineer View
+            {showTimeline ? "Hide Timeline" : "Show Timeline"}
           </button>
         </div>
+      </div>
+
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <button
+          onClick={() => setIsSimulating(!isSimulating)}
+          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-50"
+        >
+          {isSimulating ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+          {isSimulating ? "Pause Feed" : "Start Feed"}
+        </button>
+        <button
+          onClick={injectDisaster}
+          className="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700 hover:bg-amber-100"
+        >
+          <AlertTriangle className="h-3.5 w-3.5" />
+          Inject Anomaly
+        </button>
+        {anomalyDetected && !aiOptimized && (
+          <button
+            onClick={triggerGenerativeRedesign}
+            className="inline-flex items-center gap-1.5 rounded-md border border-purple-200 bg-purple-50 px-2.5 py-1 text-[11px] font-bold text-purple-700 hover:bg-purple-100"
+          >
+            <Zap className="h-3.5 w-3.5" />
+            Apply Recalibration
+          </button>
+        )}
+        <button
+          onClick={resetSimulation}
+          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-100"
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+          Reset
+        </button>
       </div>
 
       <div className="mt-3 grid gap-3 xl:grid-cols-[1fr_auto]">
@@ -148,6 +206,23 @@ export default function TopScenarioBar() {
           </div>
         )}
       </div>
+
+      {showTimeline && (
+        <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-2">Scenario Timeline (Latest)</h4>
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {scenarioEvents
+              .slice(-9)
+              .reverse()
+              .map((event) => (
+                <div key={event.id} className={`rounded-lg border px-2.5 py-2 text-xs ${severityClasses[event.severity]}`}>
+                  <p className="font-bold">{event.ts} • {event.stage}</p>
+                  <p className="mt-0.5">{event.title}</p>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 }

@@ -26,9 +26,10 @@ Ship a connected closed-loop demo: Sense -> Detect -> Recalibrate -> Impact -> A
 - [x] Updated generative UI to use env-based API URL + decision trace rendering.
 - [x] Wired analytics page to shared scenario state and live event trace.
 - [x] Wired execution logistics page to scenario status and latest event context.
+- [x] Added global demo controls (start, inject anomaly, recalibrate, reset) in scenario ribbon.
+- [x] Added expandable shared scenario timeline panel in the top ribbon.
 
 ### In Progress
-- [ ] Add actionable event timeline component tied to anomaly lifecycle.
 - [ ] Add richer structural annotations (load vectors, tolerance envelope, confidence band).
 - [ ] Introduce realtime stream transport (SSE/WebSocket) instead of polling.
 - [ ] Build unified scenario replay mode for demo storytelling.
@@ -47,3 +48,4 @@ Ship a connected closed-loop demo: Sense -> Detect -> Recalibrate -> Impact -> A
 - 2026-04-28: Added deterministic optimization traces and event ingestion API backbone.
 - 2026-04-28: Linked analytics KPIs and insights to live scenario status and event trace.
 - 2026-04-28: Linked execution schedule and logistics module to shared scenario state.
+- 2026-04-28: Added global scenario controls and expanded timeline for guided live demo operation.
