@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import DigitalTwinCanvas from "@/components/DigitalTwinCanvas";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -35,11 +35,7 @@ export default function Home() {
     injectDisaster
   } = useSiteSimulation();
 
-  const [isMounted, setIsMounted] = useState(false);
-  
   useEffect(() => {
-    setIsMounted(true);
-    
     // Hidden Keyboard shortcut for Disaster Injection (Ctrl+Shift+D)
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'D') {
@@ -49,8 +45,6 @@ export default function Home() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [injectDisaster]);
-
-  if (!isMounted) return null;
 
   return (
     <main className="flex-1 flex flex-col h-full w-full relative bg-[#f8fafc]">

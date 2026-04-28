@@ -28,6 +28,7 @@ Ship a connected closed-loop demo: Sense -> Detect -> Recalibrate -> Impact -> A
 - [x] Wired execution logistics page to scenario status and latest event context.
 - [x] Added global demo controls (start, inject anomaly, recalibrate, reset) in scenario ribbon.
 - [x] Added expandable shared scenario timeline panel in the top ribbon.
+- [x] Resolved lint blockers; frontend lint now passes cleanly.
 
 ### In Progress
 - [ ] Add richer structural annotations (load vectors, tolerance envelope, confidence band).
@@ -49,3 +50,4 @@ Ship a connected closed-loop demo: Sense -> Detect -> Recalibrate -> Impact -> A
 - 2026-04-28: Linked analytics KPIs and insights to live scenario status and event trace.
 - 2026-04-28: Linked execution schedule and logistics module to shared scenario state.
 - 2026-04-28: Added global scenario controls and expanded timeline for guided live demo operation.
+- 2026-04-28: Cleared final lint blocker on command center effect lifecycle.

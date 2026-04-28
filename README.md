@@ -57,5 +57,6 @@ The **Dynamic Engineering System (DES)** is a proof-of-concept platform designed
 - Analytics now reflects live scenario status (optimized vs at-risk) and displays a synchronized decision trace.
 - Execution logistics now adapts schedule messaging based on live anomaly/optimization status.
 - Scenario ribbon now includes one-click demo controls and an expandable shared timeline across pages.
+- Frontend lint checks now pass cleanly for a stable finals branch baseline.
 
 Built for L&T CreaTech Hackathon.
