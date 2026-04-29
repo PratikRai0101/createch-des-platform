@@ -75,7 +75,9 @@ export default function TopScenarioBar() {
   const replayTimersRef = useRef<number[]>([]);
 
   const activeIndex = useMemo(() => SCENARIO_STAGES.indexOf(scenarioStage), [scenarioStage]);
-  const latestEvent = scenarioEvents[scenarioEvents.length - 1];
+  const latestEvent = scenarioEvents && scenarioEvents.length > 0 
+  ? scenarioEvents[scenarioEvents.length - 1] 
+  : null;
 
   useEffect(() => {
     return () => {

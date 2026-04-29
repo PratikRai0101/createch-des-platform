@@ -6,7 +6,9 @@ import { useSiteSimulation } from "@/hooks/useSiteSimulation";
 
 export default function ExecutionPage() {
   const { aiOptimized, anomalyDetected, scenarioStage, scenarioEvents } = useSiteSimulation();
-  const latestEvent = scenarioEvents[scenarioEvents.length - 1];
+  const latestEvent = scenarioEvents && scenarioEvents.length > 0 
+  ? scenarioEvents[scenarioEvents.length - 1] 
+  : null;
 
   return (
     <div className="flex-1 flex flex-col h-full w-full bg-[#f8fafc]">
