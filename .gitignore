@@ -52,7 +52,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+lib/types.ts
 lib64/
 parts/
 sdist/
