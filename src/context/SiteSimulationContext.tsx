@@ -16,6 +16,7 @@ import type {
   SimulationStatus,
   ViewMode,
 } from "@/types/scenario";
+import { db } from "@/lib/databaseService";
 
 interface SiteSimulationContextValue {
   isSimulating: boolean;
@@ -24,10 +25,16 @@ interface SiteSimulationContextValue {
   status: SimulationStatus;
   soilBearingCapacity: number;
   baseDepth: number;
+  setBaseDepth: (value: number) => void;
   newDepth: number;
   anomalyDetected: boolean;
   aiOptimized: boolean;
   deviationHistory: DeviationPoint[];
+  recalibrationCount: number;
+  totalReworkSaved: number;
+  totalScheduleImpact: number;
+  currentEstimatedCost: number;
+  currentScheduleImpact: number;
   scenarioStage: ScenarioStage;
   viewMode: ViewMode;
   setViewMode: (value: ViewMode) => void;
@@ -65,17 +72,27 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
   const [anomalyDetected, setAnomalyDetected] = useState(false);
   const [aiOptimized, setAiOptimized] = useState(false);
   const [deviationHistory, setDeviationHistory] = useState<DeviationPoint[]>(createInitialHistory());
+  const [recalibrationCount, setRecalibrationCount] = useState(0);
+  const [totalReworkSaved, setTotalReworkSaved] = useState(0);
+  const [totalScheduleImpact, setTotalScheduleImpact] = useState(0);
   const [viewMode, setViewMode] = useState<ViewMode>("executive");
-  const [scenarioEvents, setScenarioEvents] = useState<ScenarioEvent[]>([
-    {
-      id: "evt-init",
-      ts: "--:--:--",
-      stage: "SENSE",
-      severity: "info",
-      title: "Scenario Engine Ready",
-      detail: "Simulation stack initialized in presentation mode.",
-    },
-  ]);
+  const [scenarioEvents, setScenarioEvents] = useState<ScenarioEvent[]>([]);
+
+  const currentEstimatedCost = useMemo(() => Math.abs(deviation) * 1500, [deviation]);
+  const currentScheduleImpact = useMemo(() => Math.abs(deviation) / 10, [deviation]);
+
+  useEffect(() => {
+    setScenarioEvents([
+      {
+        id: "evt-init",
+        ts: "--:--:--",
+        stage: "SENSE",
+        severity: "info",
+        title: "Scenario Engine Ready",
+        detail: "Simulation stack initialized in presentation mode.",
+      },
+    ]);
+  }, []);
   const [pipelineConnected, setPipelineConnected] = useState(false);
 
   const pushEvent = useCallback(
@@ -162,6 +179,32 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
       }
     };
   }, [isSimulating, aiOptimized, baseDepth, pushEvent]);
+
+  useEffect(() => {
+    if (db && db.design && db.design.getSummary) {
+      db.design.getSummary("00000000-0000-4000-8000-000000000001")
+        .then(result => {
+          const rows = Array.isArray(result.data) ? result.data : [];
+          const totalSaved = rows.reduce(
+            (sum, row) => sum + (Number((row as any).rework_saved_inr) || 0),
+            0
+          );
+          const totalImpact = rows.reduce(
+            (sum, row) => sum + (Number((row as any).schedule_impact) || 0),
+            0
+          );
+
+          setRecalibrationCount(rows.length);
+          setTotalReworkSaved(totalSaved);
+          setTotalScheduleImpact(totalImpact);
+        })
+        .catch(error => {
+          console.error('Failed to fetch recalibration count:', error);
+        });
+    } else {
+      console.warn('Database service not available');
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -274,7 +317,7 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
     [pushEvent]
   );
 
-  const triggerGenerativeRedesign = useCallback(() => {
+  const triggerGenerativeRedesign = useCallback(async () => {
     setAiOptimized(true);
     setAnomalyDetected(false);
     setStatus("STABLE");
@@ -292,7 +335,26 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
       "AI Recalibration Applied",
       "Structural geometry updated to recover schedule and cost risk."
     );
-  }, [pushEvent]);
+
+    // Archive the optimization run with calculated figures
+    const archiveRun = {
+      project_id: "00000000-0000-4000-8000-000000000001",
+      rework_saved_inr: currentEstimatedCost,
+      schedule_impact: currentScheduleImpact,
+    } as any;
+
+    try {
+      const result = await db.design.archiveOptimization(archiveRun);
+      console.log("Archive Result:", { data: result.data, error: result.error });
+      if (!result.error) {
+        setRecalibrationCount(prev => prev + 1);
+        setTotalReworkSaved(prev => prev + currentEstimatedCost);
+        setTotalScheduleImpact(prev => prev + currentScheduleImpact);
+      }
+    } catch (error) {
+      console.error('Failed to archive optimization:', error);
+    }
+  }, [pushEvent, currentEstimatedCost, currentScheduleImpact]);
 
   const injectDisaster = useCallback(() => {
     setIsSimulating(false);
@@ -362,10 +424,16 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
       status,
       soilBearingCapacity,
       baseDepth,
+      setBaseDepth,
       newDepth,
       anomalyDetected,
       aiOptimized,
       deviationHistory,
+      recalibrationCount,
+      totalReworkSaved,
+      totalScheduleImpact,
+      currentEstimatedCost,
+      currentScheduleImpact,
       scenarioStage,
       viewMode,
       setViewMode,
@@ -382,10 +450,16 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
       status,
       soilBearingCapacity,
       baseDepth,
+      setBaseDepth,
       newDepth,
       anomalyDetected,
       aiOptimized,
       deviationHistory,
+      recalibrationCount,
+      totalReworkSaved,
+      totalScheduleImpact,
+      currentEstimatedCost,
+      currentScheduleImpact,
       scenarioStage,
       viewMode,
       setViewMode,

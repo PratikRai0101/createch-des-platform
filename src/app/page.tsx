@@ -29,6 +29,11 @@ export default function Home() {
     newDepth,
     anomalyDetected,
     aiOptimized,
+    recalibrationCount,
+    totalReworkSaved,
+    totalScheduleImpact,
+    currentEstimatedCost,
+    currentScheduleImpact,
     deviationHistory,
     viewMode,
     triggerGenerativeRedesign,
@@ -96,16 +101,16 @@ export default function Home() {
           <KpiCard title="Active Edge Nodes" value="1,244" trend="+12 online" icon={<Activity />} />
           <KpiCard 
             title="AI Recalibrations" 
-            value={aiOptimized ? "1" : "0"} 
-            trend="Today" 
+            value={recalibrationCount?.toString() || "0"}
+            trend="Total" 
             icon={<RefreshCw />} 
-            color={aiOptimized ? "text-purple-600" : "text-gray-400"} 
-            bgColor={aiOptimized ? "bg-purple-100" : "bg-gray-100"}
+            color={recalibrationCount > 0 ? "text-purple-600" : "text-gray-400"} 
+            bgColor={recalibrationCount > 0 ? "bg-purple-100" : "bg-gray-100"}
           />
           <KpiCard 
             title="Estimated Rework Cost" 
-            value={aiOptimized ? "₹0" : (anomalyDetected ? "₹45.2L" : "₹0")} 
-            trend={aiOptimized ? "-100% mitigated" : (anomalyDetected ? "+12% variance" : "On budget")} 
+            value={aiOptimized ? "₹0" : `₹${currentEstimatedCost.toLocaleString()}`} 
+            trend={totalReworkSaved > 0 ? `Saved ₹${totalReworkSaved.toLocaleString()}` : "On budget"} 
             icon={<AlertTriangle />} 
             color={aiOptimized ? "text-green-600" : (anomalyDetected ? "text-red-600" : "text-[#0077c8]")} 
             bgColor={aiOptimized ? "bg-green-100" : (anomalyDetected ? "bg-red-100" : "bg-blue-50")}
@@ -113,8 +118,8 @@ export default function Home() {
           />
           <KpiCard 
             title="Schedule Impact" 
-            value={aiOptimized ? "-1 day" : (anomalyDetected ? "+4 days" : "0 days")} 
-            trend="Critical Path" 
+            value={aiOptimized ? "-1 day" : `${currentScheduleImpact.toFixed(1)} days`} 
+            trend={totalScheduleImpact > 0 ? `Total ${totalScheduleImpact.toFixed(1)}d` : "Critical Path"} 
             icon={<Zap />} 
             color={aiOptimized ? "text-green-600" : (anomalyDetected ? "text-red-600" : "text-gray-600")} 
             bgColor={aiOptimized ? "bg-green-100" : (anomalyDetected ? "bg-red-100" : "bg-gray-100")}
