@@ -44,14 +44,17 @@ uvicorn main:app --reload --port 8000
 
 | Control / Area | What It Does | Demo Tip |
 |---|---|---|
-| **Live Site Constraints** (sliders) | Adjust deviation, soil bearing, safety factor | Change a slider to show the inputs change |
+| **Live Site Constraints** (sliders) | Adjust deviation, soil bearing capacity | Change a slider to show inputs change |
 | **Run Generative Optimization** | Calls the Python backend (or simulates) to generate 3 structural options | **Key moment** — shows "Cost / Carbon / Time" cards |
 | **Tradeoff Weights** | Drag Cost/Carbon/Time sliders — options re-rank in real time with a Score % badge | **Finals differentiator** — move Carbon to 80% and watch the green option jump to #1 |
 | **Option Cards** | Click to select an option. 3D preview updates to show the chosen depth | Each card shows depth, cost, carbon, confidence |
 | **Decision Trace** | Bottom panel shows the reasoning steps | Adds transparency — judges love this |
 | **3D Preview** | Shows selected option's beam geometry with ghost baseline overlay | Compare before/after |
+| **AI Chat button** | Toggles the Qwen 3.5 chatbot panel on the right | **Finals differentiator** — talk to the AI |
+| **Qwen 3.5 Chat Panel** | Ask the AI to generate or refine structural designs. Type "generate 3 beam options" or "optimize for lower cost" | Every AI response can generate option cards on the left. Iterative refinement tracked in Recalibration History |
+| **Recalibration History** | Shows all past AI design iterations | Demonstrates multi-step refinement |
 
-**Narrative flow:** _Adjust input sliders → Run Optimization → Show 3 ranked options → Drag Tradeoff sliders → Options re-rank → Select one → 3D preview updates with ghost overlay_
+**Narrative flow:** _Click AI Chat → Type "Generate 3 beam options for these constraints" → Options appear → Adjust feedback → Ask "Optimize for lower carbon" → New options appear → History tracks each iteration_
 
 ---
 

@@ -38,6 +38,7 @@ Ship a connected closed-loop demo: Sense -> Detect -> Recalibrate -> Impact -> A
 - [x] Added 3D camera flythrough animation for recalibration explanation.
 - [x] Added tradeoff sliders in generative design for real-time option re-ranking.
 - [x] Added incident replay mode on CV page with timeline scrubber.
+- [x] Added local Qwen 3.5 0.8B AI chat integration with iterative design pipeline.
 
 ### In Progress
 
@@ -62,3 +63,4 @@ Ship a connected closed-loop demo: Sense -> Detect -> Recalibrate -> Impact -> A
 - 2026-04-28: Added exponential backoff reconnection for resilient SSE streaming.
 - 2026-04-28: Added downloadable JSON event ledger from analytics for compliance sharing.
 - 2026-04-28: Added 3D camera flythrough, tradeoff sliders, and incident replay mode for finals.
+- 2026-04-28: Added Qwen 3.5 0.8B local AI chat with iterative structural design endpoint.
