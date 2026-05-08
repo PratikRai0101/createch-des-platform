@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { Activity, Terminal, Server, Wifi, WifiOff, AlertCircle, Camera, Focus, SkipForward, Play, Pause } from "lucide-react";
+import { Activity, Terminal, Wifi, WifiOff, AlertCircle, Camera, Focus, SkipForward, Play, Pause } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSiteSimulation } from "@/hooks/useSiteSimulation";
 import DigitalTwinCanvas from "@/components/DigitalTwinCanvas";
@@ -45,7 +45,7 @@ function generateIncidentFrames(tracks: TrackSnapshot[], duration: number, fps: 
 
 export default function IotSensorsPage() {
   const [logs, setLogs] = useState(mockLogStream);
-  const { scenarioEvents, injectDisaster, anomalyDetected, viewMode, updateMachineryPos, activeCommands, executedCommands, setActiveCommands, machineryState, executeGCodeQueue, status, deviation, baseDepth, newDepth, aiOptimized, controlMode, setControlMode, manualMove, pushEvent } = useSiteSimulation();
+  const { scenarioEvents, anomalyDetected, viewMode, updateMachineryPos, activeCommands, executedCommands, setActiveCommands, machineryState, executeGCodeQueue, status, deviation, baseDepth, newDepth, aiOptimized, controlMode, setControlMode, manualMove, pushEvent } = useSiteSimulation();
   const [replaying, setReplaying] = useState(false);
   const [replayProgress, setReplayProgress] = useState(0);
   const [replayPaused, setReplayPaused] = useState(false);
@@ -278,13 +278,6 @@ export default function IotSensorsPage() {
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
             1,244 Active Nodes
           </div>
-          <button
-            onClick={injectDisaster}
-            className="px-4 py-2 text-sm font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg shadow-sm flex items-center gap-2 transition-colors"
-          >
-            <Server className="w-4 h-4" />
-            Inject CV Anomaly
-          </button>
           <button
             onClick={() => setControlMode(controlMode === 'AUTO' ? 'MANUAL' : 'AUTO')}
             className={`px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-sm flex items-center gap-2 transition-colors ${
