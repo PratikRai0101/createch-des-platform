@@ -10,7 +10,6 @@ import {
   RefreshCw,
   Zap,
   Cpu,
-  RotateCcw
 } from "lucide-react";
 import { useSiteSimulation } from "@/hooks/useSiteSimulation";
 import KpiCard from "@/components/dashboard/KpiCard";
@@ -20,8 +19,6 @@ import DeviationChart from "@/components/dashboard/DeviationChart";
 
 export default function Home() {
   const {
-    isSimulating,
-    setIsSimulating,
     deviation,
     status,
     soilBearingCapacity,
@@ -72,25 +69,6 @@ export default function Home() {
             <span className={`w-2 h-2 rounded-full ${anomalyDetected ? "bg-red-500 animate-pulse" : "bg-green-500"}`}></span>
             {anomalyDetected ? "Critical Anomaly" : "Live Sync Active"}
           </div>
-          
-          {/* Pitch-Ready Reset Button */}
-          <button
-            onClick={resetSimulation}
-            className="px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-            title="Reset Scenario"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Reset Demo
-          </button>
-
-          <button
-            onClick={() => setIsSimulating(!isSimulating)}
-            className={`px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all shadow-sm ${
-              isSimulating ? "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50" : "bg-[#0077c8] text-white hover:bg-[#0066ad] hover:shadow-md"
-            }`}
-          >
-            {isSimulating ? "Pause Data Feed" : "Start Live Simulation"}
-          </button>
         </div>
       </header>
 
