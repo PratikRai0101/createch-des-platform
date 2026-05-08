@@ -11,19 +11,39 @@ The **Dynamic Engineering System (DES)** is a proof-of-concept platform designed
 3. **Predictive Cost Simulations:** A real-time trajectory chart comparing Baseline Costs vs. Rework Costs, demonstrating the exact financial impact of the AI intervention.
 
 ### How to Run Locally
-1. Ensure you have Node.js installed.
-2. Navigate to this directory: `cd createch-des-platform`
-3. Install dependencies: `npm install`
-4. Start the application: `npm run dev`
-5. Open your browser to `http://localhost:3000`
 
-### Run the Python Generative Backend (Optional but Recommended)
-1. Open a second terminal.
-2. Navigate to backend: `cd backend`
-3. Create and activate a virtual environment.
-4. Install dependencies: `pip install -r requirements.txt`
-5. Start server: `uvicorn main:app --reload --port 8000`
-6. Frontend will call `http://127.0.0.1:8000/api/optimize-geometry` from the Generative Design page.
+#### Quick Start (one command)
+```bash
+cd createch-des-platform
+./start.sh
+```
+This starts Ollama, the Python backend, and the Next.js frontend automatically.
+Open `http://localhost:3000` in your browser. Press `Ctrl+C` to stop everything.
+
+#### Manual Start (separate terminals)
+
+**Terminal 1 — Frontend:**
+```bash
+cd createch-des-platform
+npm install
+npm run dev
+# → http://localhost:3000
+```
+
+**Terminal 2 — Backend (optional, enables AI features):**
+```bash
+cd createch-des-platform/backend
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+# → http://localhost:8000
+```
+
+**Terminal 3 — Ollama (optional, enables AI chat with Qwen 3.5):**
+```bash
+unset OLLAMA_MODELS && ollama serve
+# → http://localhost:11434
+```
 
 ### Optional Frontend API Base URL
 - Set `NEXT_PUBLIC_AI_API_BASE_URL` if backend is not running on default localhost:8000.
