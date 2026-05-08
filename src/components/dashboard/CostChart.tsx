@@ -11,29 +11,35 @@ import {
   ResponsiveContainer
 } from "recharts";
 
-const initialCostData = [
-  { day: "Mon", projected: 12000, actual: 12000 },
-  { day: "Tue", projected: 24000, actual: 25000 },
-  { day: "Wed", projected: 36000, actual: 39000 },
-  { day: "Thu", projected: 48000, actual: 54000 }, // Rework spike
-  { day: "Fri", projected: 60000, actual: null },
-  { day: "Sat", projected: 72000, actual: null },
-];
-
 type CostChartPoint = {
   day: string;
   projected: number;
-  actual: number | null;
+  actual: number;
 };
+
+const initialCostData: CostChartPoint[] = [
+  { day: "Mon", projected: 200000, actual: 200000 },
+  { day: "Tue", projected: 300000, actual: 300000 },
+  { day: "Wed", projected: 400000, actual: 400000 },
+  { day: "Thu", projected: 500000, actual: 500000 },
+  { day: "Fri", projected: 600000, actual: 600000 },
+  { day: "Sat", projected: 1000000, actual: 1000000 },
+];
 
 export default function CostChart({
   aiOptimized,
-  data,
+  costHistory,
 }: {
   aiOptimized: boolean;
-  data?: CostChartPoint[];
+  costHistory?: CostChartPoint[];
 }) {
-  const chartData = data ?? initialCostData;
+  const chartData = costHistory ?? initialCostData;
+
+  const maxValue = Math.max(
+    ...chartData.map(d => Math.max(d.projected, d.actual))
+  );
+
+  const yAxisMax = Math.ceil(maxValue * 1.2 / 100000) * 100000;
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex-1 min-h-[250px] flex flex-col">
@@ -56,8 +62,17 @@ export default function CostChart({
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
             <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} />
-            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} />
-            <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }}
+              domain={[0, yAxisMax]}
+              tickFormatter={(value) => `₹${(value / 100000).toFixed(0)}L`}
+            />
+            <Tooltip
+              contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+              formatter={(value: number | undefined) => value ? `₹${value.toLocaleString()}` : ''}
+            />
             <Area type="monotone" dataKey="projected" stroke="#0077c8" fillOpacity={1} fill="url(#colorProjected)" name="Baseline Cost" />
             {!aiOptimized && (
               <Area type="monotone" dataKey="actual" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#colorActual)" name="Actual + Rework" />

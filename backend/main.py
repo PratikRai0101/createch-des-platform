@@ -1,5 +1,6 @@
 import asyncio
 import json
+import math
 from collections import deque
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -81,6 +82,24 @@ class EventRecord(BaseModel):
     title: str
     detail: str
     context: Dict[str, Any]
+
+
+class Position(BaseModel):
+    x: float
+    y: float
+    z: float
+
+
+class MachineryCommand(BaseModel):
+    machine_id: str
+    current_pos: Position
+    target_pos: Position
+
+
+class MachineryCommandResponse(BaseModel):
+    machine_id: str
+    gcode: List[str]
+    estimated_time_seconds: float
 
 
 event_log: Deque[EventRecord] = deque(maxlen=300)
@@ -180,6 +199,29 @@ def optimize_geometry(req: OptimizationRequest):
         recommended_option_id="opt_b",
         options=options,
         decision_trace=decision_trace,
+    )
+
+
+@app.post("/api/machinery/calculate-path", response_model=MachineryCommandResponse)
+def calculate_path(command: MachineryCommand):
+    dx = command.target_pos.x - command.current_pos.x
+    dy = command.target_pos.y - command.current_pos.y
+    dz = command.target_pos.z - command.current_pos.z
+    distance = math.sqrt(dx * dx + dy * dy + dz * dz)
+    feed_rate = 500
+    estimated_time = max(1.0, distance * 0.12)
+
+    gcode = [
+        f"G01 X{command.target_pos.x:.2f} Y{command.target_pos.y:.2f} Z{command.target_pos.z:.2f} F{feed_rate}",
+        "M03",
+        "G04 P1",
+        "M05",
+    ]
+
+    return MachineryCommandResponse(
+        machine_id=command.machine_id,
+        gcode=gcode,
+        estimated_time_seconds=round(estimated_time, 2),
     )
 
 
