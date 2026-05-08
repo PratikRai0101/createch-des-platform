@@ -152,9 +152,9 @@ export default function GenerativeDesignPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2"><Scale className="w-4 h-4" /> Tradeoff Weights</h3>
             <div className="space-y-4">
-              <TradeWeightSlider label="Cost" value={weights.cost} color="bg-emerald-500" onChange={(v) => updateWeight("cost", v)} />
-              <TradeWeightSlider label="Carbon" value={weights.carbon} color="bg-green-500" onChange={(v) => updateWeight("carbon", v)} />
-              <TradeWeightSlider label="Time" value={weights.time} color="bg-blue-500" onChange={(v) => updateWeight("time", v)} />
+              <TradeWeightSlider label="Cost" value={weights.cost} color="bg-emerald-500" onChange={(v: number) => updateWeight("cost", v)} />
+              <TradeWeightSlider label="Carbon" value={weights.carbon} color="bg-green-500" onChange={(v: number) => updateWeight("carbon", v)} />
+              <TradeWeightSlider label="Time" value={weights.time} color="bg-blue-500" onChange={(v: number) => updateWeight("time", v)} />
             </div>
           </div>
         </div>

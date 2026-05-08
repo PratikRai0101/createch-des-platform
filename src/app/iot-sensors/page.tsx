@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Activity, Terminal, Server, Wifi, WifiOff, AlertCircle, Camera, Focus, SkipForward, Play, Pause } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSiteSimulation } from "@/hooks/useSiteSimulation";
+import DigitalTwinCanvas from "@/components/DigitalTwinCanvas";
 
 const mockLogStream = [
   { ts: "14:02:33.401", level: "INFO", msg: "Node-7A connected. Handshake OK." },
@@ -44,11 +45,44 @@ function generateIncidentFrames(tracks: TrackSnapshot[], duration: number, fps: 
 
 export default function IotSensorsPage() {
   const [logs, setLogs] = useState(mockLogStream);
-  const { scenarioEvents, injectDisaster, anomalyDetected, viewMode } = useSiteSimulation();
+  const { scenarioEvents, injectDisaster, anomalyDetected, viewMode, updateMachineryPos, activeCommands, executedCommands, setActiveCommands, machineryState, executeGCodeQueue, status, deviation, baseDepth, newDepth, aiOptimized, controlMode, setControlMode, manualMove, pushEvent } = useSiteSimulation();
   const [replaying, setReplaying] = useState(false);
   const [replayProgress, setReplayProgress] = useState(0);
   const [replayPaused, setReplayPaused] = useState(false);
   const replayTimerRef = useRef<number | null>(null);
+  const lastExcavatorPosRef = useRef<{ x: number; z: number } | null>(null);
+  const terminalRef = useRef<HTMLDivElement>(null);
+  const joystickIntervalRef = useRef<number | null>(null);
+  const [joystickVector, setJoystickVector] = useState({ x: 0, y: 0 });
+
+  const API_BASE_URL = "http://127.0.0.1:8000";
+
+  const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+
+  // Coordinate mapper: CCTV 2D (0-100%) → 3D world coordinates
+  const mapYOLOToWorld = useMemo(
+    () => (percentX: number, percentY: number) => {
+      // Map percentage (0-100) to 3D world space within grid bounds
+      // X: -25 to 25 (left-right)
+      // Z: -25 to 25 (depth)
+      const worldX = clamp((percentX / 100) * 50 - 25, -25, 25);
+      const worldZ = clamp((percentY / 100) * 50 - 25, -25, 25);
+      return { x: worldX, z: worldZ };
+    },
+    []
+  );
+
+  // Throttle distance threshold: only update if moved > 0.5 unit
+  const shouldUpdatePosition = useCallback(
+    (newPos: { x: number; z: number }) => {
+      if (!lastExcavatorPosRef.current) return true;
+      const dx = newPos.x - lastExcavatorPosRef.current.x;
+      const dz = newPos.z - lastExcavatorPosRef.current.z;
+      const distance = Math.sqrt(dx * dx + dz * dz);
+      return distance > 0.5;
+    },
+    []
+  );
 
   const cvTracks = useMemo(
     () => [
@@ -66,19 +100,109 @@ export default function IotSensorsPage() {
 
   const latestEvents = useMemo(() => scenarioEvents.slice(-4).reverse(), [scenarioEvents]);
 
+  // Update machinery position from YOLO tracking every 500ms
   useEffect(() => {
-    const interval = setInterval(() => {
-      setLogs((prev) => {
-        const newLog = {
-          ts: new Date().toISOString().substring(11, 23),
-          level: Math.random() > 0.9 ? "WARN" : "DATA",
-          msg: `Payload: { "sbc": ${(400 + Math.random() * 50).toFixed(1)}, "dev": ${(Math.random() * 10).toFixed(1)}, "temp": ${(30 + Math.random() * 10).toFixed(1)} }`,
-        };
-        return [...prev.slice(-15), newLog];
-      });
-    }, 2000);
-    return () => clearInterval(interval);
+    if (controlMode !== 'AUTO') return;
+
+    const trackingInterval = setInterval(() => {
+      // Find excavator track in cvTracks
+      const excavatorTrack = cvTracks.find((track) => track.label.includes("EXCAVATOR"));
+
+      if (excavatorTrack) {
+        // Calculate center point of excavator bounding box (in percentages)
+        const centerX = excavatorTrack.x + excavatorTrack.w / 2 / 10; // Convert pixels to percentage
+        const centerY = excavatorTrack.y + excavatorTrack.h / 2 / 10;
+
+        // Map to 3D world coordinates
+        const worldPos = mapYOLOToWorld(centerX, centerY);
+
+        // Only update if position has moved significantly
+        if (shouldUpdatePosition(worldPos)) {
+          updateMachineryPos("excavator", {
+            x: worldPos.x,
+            z: worldPos.z,
+            status: "MOVING",
+          });
+          lastExcavatorPosRef.current = worldPos;
+        }
+      } else {
+        // Excavator not detected in frame - set to IDLE
+        updateMachineryPos("excavator", {
+          status: "IDLE",
+        });
+      }
+    }, 500);
+
+    return () => clearInterval(trackingInterval);
+  }, [cvTracks, mapYOLOToWorld, shouldUpdatePosition, updateMachineryPos]);
+
+  useEffect(() => {
+    return () => {
+      if (joystickIntervalRef.current) {
+        clearInterval(joystickIntervalRef.current);
+      }
+    };
   }, []);
+
+  // Trigger machinery path calculation on anomaly detection
+  const excavatorRef = useRef(machineryState.excavator);
+  useEffect(() => {
+    excavatorRef.current = machineryState.excavator;
+  }, [machineryState.excavator]);
+
+  useEffect(() => {
+    if (!anomalyDetected) {
+      setActiveCommands([]);
+      return;
+    }
+
+    if (controlMode === 'MANUAL') {
+      pushEvent('IMPACT', 'warning', 'Manual Override Active', 'Autonomous Fix Paused - Switch to Auto mode to enable autonomous correction.');
+      return;
+    }
+
+    if (activeCommands.length > 0) {
+      return;
+    }
+
+    const current = excavatorRef.current;
+    const target = {
+      x: clamp(current.x + 15, -25, 25),
+      y: 0,
+      z: clamp(current.z - 20, -25, 25),
+    };
+
+    fetch(`${API_BASE_URL}/api/machinery/calculate-path`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        machine_id: 'excavator-14',
+        current_pos: { x: current.x, y: 0, z: current.z },
+        target_pos: target,
+      }),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`Path calculation failed (${response.status})`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (Array.isArray(data.gcode)) {
+          executeGCodeQueue(data.gcode);
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to calculate machinery path:', error);
+      });
+  }, [anomalyDetected, controlMode, activeCommands.length, setActiveCommands, executeGCodeQueue, pushEvent]);
+
+  // Auto-scroll terminal to bottom when commands update
+  useEffect(() => {
+    if (terminalRef.current) {
+      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+    }
+  }, [activeCommands, executedCommands]);
 
   const startReplay = useCallback(() => {
     if (replaying) {
@@ -160,6 +284,14 @@ export default function IotSensorsPage() {
           >
             <Server className="w-4 h-4" />
             Inject CV Anomaly
+          </button>
+          <button
+            onClick={() => setControlMode(controlMode === 'AUTO' ? 'MANUAL' : 'AUTO')}
+            className={`px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-sm flex items-center gap-2 transition-colors ${
+              controlMode === 'AUTO' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-orange-600 hover:bg-orange-700'
+            }`}
+          >
+            {controlMode === 'AUTO' ? 'Autonomous' : 'Manual Teleop'}
           </button>
         </div>
       </header>
@@ -275,7 +407,7 @@ export default function IotSensorsPage() {
                 </div>
               </div>
 
-              <div className="flex-1 p-4 overflow-y-auto font-mono text-[11px] leading-relaxed space-y-1 scrollbar-hide">
+              <div ref={terminalRef} className="flex-1 p-4 overflow-y-auto font-mono text-[11px] leading-relaxed space-y-1 scrollbar-hide">
                 {logs.map((log, i) => (
                   <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} key={i} className="flex gap-3">
                     <span className="text-slate-500 shrink-0">[{log.ts}]</span>
@@ -289,10 +421,163 @@ export default function IotSensorsPage() {
                     <span className="text-slate-300 break-all">{log.msg}</span>
                   </motion.div>
                 ))}
+
+                {executedCommands.length > 0 && (
+                  <div className="mt-4 rounded-xl border border-slate-700 bg-slate-950/95 p-3">
+                    <div className="flex items-center justify-between mb-2 text-[10px] uppercase tracking-[0.2em] text-slate-400">
+                      <span>Command History</span>
+                      <span>{executedCommands.length} executed</span>
+                    </div>
+                    <div className="space-y-1 text-slate-200 text-[10px] leading-snug">
+                      {executedCommands.slice(-10).map((command, idx) => (
+                        <div key={`${command}-${idx}`} className="rounded px-2 py-1 bg-slate-900/90 border border-slate-800">
+                          <span>{command}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {activeCommands.length > 0 ? (
+                  <div className="mt-4 rounded-xl border border-slate-700 bg-slate-950/95 p-3">
+                    <div className="flex items-center justify-between mb-2 text-[10px] uppercase tracking-[0.2em] text-slate-400">
+                      <span>Active G-Code Queue</span>
+                      <span>{activeCommands.length} lines</span>
+                    </div>
+                    <div className="space-y-1 text-green-400 text-[10px] leading-snug">
+                      {activeCommands.slice(-10).map((command, idx) => (
+                        <div key={`${command}-${idx}`} className="rounded px-2 py-1 bg-slate-900/90 border border-slate-800">
+                          <span>{command}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-4 rounded-xl border border-slate-700 bg-slate-950/95 p-3 text-slate-400 text-[10px] leading-snug">
+                    SYSTEM IDLE - AWAITING COMMANDS
+                  </div>
+                )}
               </div>
 
               <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,3px_100%] z-10 opacity-20"></div>
             </div>
+
+            {controlMode === 'MANUAL' && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Manual Joystick Control</h4>
+                <div className="mb-4 h-[200px] w-full rounded-2xl overflow-hidden border border-slate-200">
+                  <DigitalTwinCanvas
+                    deviation={0}
+                    status={status}
+                    baseDepth={0.5}
+                    newDepth={0.5}
+                    aiOptimized={false}
+                    miniMap={true}
+                  />
+                </div>
+                <div className="flex justify-center">
+                  <div
+                    className="relative w-32 h-32 bg-gray-100 rounded-full border-2 border-gray-300 touch-none select-none"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const centerX = rect.left + rect.width / 2;
+                      const centerY = rect.top + rect.height / 2;
+                      const deltaX = (e.clientX - centerX) / (rect.width / 2);
+                      const deltaY = (e.clientY - centerY) / (rect.height / 2);
+                      const distance = Math.sqrt(deltaX ** 2 + deltaY ** 2);
+                      const clampedDist = Math.min(distance, 1);
+                      const angle = Math.atan2(deltaY, deltaX);
+                      const x = Math.cos(angle) * clampedDist;
+                      const y = Math.sin(angle) * clampedDist;
+                      setJoystickVector({ x, y });
+                      if (joystickIntervalRef.current) clearInterval(joystickIntervalRef.current);
+                      joystickIntervalRef.current = window.setInterval(() => {
+                        manualMove(x * 0.5, y * 0.5);
+                      }, 50);
+                    }}
+                    onMouseMove={(e) => {
+                      if (e.buttons === 1) { // Left mouse button down
+                        e.preventDefault();
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const centerX = rect.left + rect.width / 2;
+                        const centerY = rect.top + rect.height / 2;
+                        const deltaX = (e.clientX - centerX) / (rect.width / 2);
+                        const deltaY = (e.clientY - centerY) / (rect.height / 2);
+                        const distance = Math.sqrt(deltaX ** 2 + deltaY ** 2);
+                        const clampedDist = Math.min(distance, 1);
+                        const angle = Math.atan2(deltaY, deltaX);
+                        const x = Math.cos(angle) * clampedDist;
+                        const y = Math.sin(angle) * clampedDist;
+                        setJoystickVector({ x, y });
+                      }
+                    }}
+                    onMouseUp={() => {
+                      setJoystickVector({ x: 0, y: 0 });
+                      if (joystickIntervalRef.current) {
+                        clearInterval(joystickIntervalRef.current);
+                        joystickIntervalRef.current = null;
+                      }
+                    }}
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const centerX = rect.left + rect.width / 2;
+                      const centerY = rect.top + rect.height / 2;
+                      const touch = e.touches[0];
+                      const deltaX = (touch.clientX - centerX) / (rect.width / 2);
+                      const deltaY = (touch.clientY - centerY) / (rect.height / 2);
+                      const distance = Math.sqrt(deltaX ** 2 + deltaY ** 2);
+                      const clampedDist = Math.min(distance, 1);
+                      const angle = Math.atan2(deltaY, deltaX);
+                      const x = Math.cos(angle) * clampedDist;
+                      const y = Math.sin(angle) * clampedDist;
+                      setJoystickVector({ x, y });
+                      if (joystickIntervalRef.current) clearInterval(joystickIntervalRef.current);
+                      joystickIntervalRef.current = window.setInterval(() => {
+                        manualMove(x * 0.5, y * 0.5);
+                      }, 50);
+                    }}
+                    onTouchMove={(e) => {
+                      e.preventDefault();
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const centerX = rect.left + rect.width / 2;
+                      const centerY = rect.top + rect.height / 2;
+                      const touch = e.touches[0];
+                      const deltaX = (touch.clientX - centerX) / (rect.width / 2);
+                      const deltaY = (touch.clientY - centerY) / (rect.height / 2);
+                      const distance = Math.sqrt(deltaX ** 2 + deltaY ** 2);
+                      const clampedDist = Math.min(distance, 1);
+                      const angle = Math.atan2(deltaY, deltaX);
+                      const x = Math.cos(angle) * clampedDist;
+                      const y = Math.sin(angle) * clampedDist;
+                      setJoystickVector({ x, y });
+                    }}
+                    onTouchEnd={() => {
+                      setJoystickVector({ x: 0, y: 0 });
+                      if (joystickIntervalRef.current) {
+                        clearInterval(joystickIntervalRef.current);
+                        joystickIntervalRef.current = null;
+                      }
+                    }}
+                  >
+                    <div
+                      className="absolute w-8 h-8 bg-blue-500 rounded-full border-2 border-white shadow-md cursor-pointer"
+                      style={{
+                        left: '50%',
+                        top: '50%',
+                        transform: `translate(-50%, -50%) translate(${joystickVector.x * 40}px, ${joystickVector.y * 40}px)`,
+                      }}
+                      onPointerDown={(e) => {
+                        e.currentTarget.setPointerCapture(e.pointerId);
+                      }}
+                      onPointerUp={(e) => {
+                        e.currentTarget.releasePointerCapture(e.pointerId);
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
               <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Cross-System Event Timeline</h4>

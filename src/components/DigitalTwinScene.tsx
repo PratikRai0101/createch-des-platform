@@ -4,6 +4,7 @@ import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Box, Cylinder, Grid, Plane, Edges, Html, Line } from "@react-three/drei";
 import * as THREE from "three";
+import { useSiteSimulation } from "@/hooks/useSiteSimulation";
 
 interface SceneProps {
   deviation: number;
@@ -13,9 +14,130 @@ interface SceneProps {
   aiOptimized: boolean;
 }
 
+type MachineryType = "excavator" | "crane";
+
+type MachineryStatus = "IDLE" | "MOVING" | "WORKING";
+
+interface MachineryAsset {
+  x: number;
+  y: number;
+  z: number;
+  status: MachineryStatus;
+}
+
+interface MachineryActorProps {
+  type: MachineryType;
+  position: MachineryAsset;
+  status: MachineryStatus;
+}
+
+function MachineryActor({ type, position, status }: MachineryActorProps) {
+  const groupRef = useRef<THREE.Group>(null);
+  const armRef = useRef<THREE.Mesh>(null);
+  const targetPosition = useMemo(() => new THREE.Vector3(), []);
+
+  useFrame((state) => {
+    if (!groupRef.current) {
+      return;
+    }
+
+    console.log("3D Position Update:", position);
+
+    if (isNaN(position.x) || isNaN(position.z)) {
+      targetPosition.set(0, 0, 0);
+    } else {
+      targetPosition.set(position.x, 0, position.z);
+    }
+    groupRef.current.position.lerp(targetPosition, 0.1);
+
+    if (armRef.current && status === "WORKING") {
+      armRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 5) * 0.2;
+    }
+  });
+
+  const material = useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: type === "excavator" ? "#facc15" : "#3b82f6",
+        metalness: 0.2,
+        roughness: 0.4,
+      }),
+    [type]
+  );
+
+  const statusColor =
+    status === "MOVING"
+      ? "#10b981"
+      : status === "WORKING"
+      ? "#f97316"
+      : "#94a3b8";
+
+  if (!position || typeof position.x !== 'number' || typeof position.z !== 'number') {
+    return (
+      <Box args={[1, 1, 1]} position={[0, 0, 0]}>
+        <meshStandardMaterial color="red" />
+      </Box>
+    );
+  }
+
+  return (
+    <group ref={groupRef}>
+      {type === "excavator" ? (
+        <>
+          <pointLight position={[0, -0.5, 0]} intensity={2} color="#facc15" distance={3} />
+          <mesh material={material} position={[0, 0.2, 0]} castShadow>
+            <boxGeometry args={[1.2, 0.4, 0.8]} />
+          </mesh>
+          <mesh material={material} position={[0.3, 0.55, 0]} castShadow>
+            <boxGeometry args={[0.5, 0.5, 0.5]} />
+          </mesh>
+          <mesh ref={armRef} material={material} position={[-0.45, 0.4, 0]} rotation={[0, 0, -0.4]} castShadow>
+            <boxGeometry args={[0.1, 0.1, 1.0]} />
+          </mesh>
+        </>
+      ) : (
+        <>
+          <mesh material={material} position={[0, 1.5, 0]} castShadow>
+            <cylinderGeometry args={[0.12, 0.12, 3, 16]} />
+          </mesh>
+          <mesh material={material} position={[1.5, 2.0, 0]} castShadow>
+            <boxGeometry args={[3, 0.12, 0.12]} />
+          </mesh>
+          <mesh material={material} position={[-0.75, 2.0, 0]} castShadow>
+            <boxGeometry args={[0.4, 0.4, 0.4]} />
+          </mesh>
+        </>
+      )}
+
+      <Html position={[0, type === "excavator" ? 0.95 : 2.5, 0]} center style={{ pointerEvents: "none" }}>
+        <div className="bg-black/80 border border-white/10 text-white text-[10px] font-mono px-2 py-1 rounded">
+          <div className="font-bold uppercase tracking-widest">{type}</div>
+          <div style={{ color: statusColor }} className="text-[10px] mt-0.5">
+            {status}
+          </div>
+        </div>
+      </Html>
+    </group>
+  );
+}
+
 export default function DigitalTwinScene({ deviation, status, baseDepth, newDepth, aiOptimized }: SceneProps) {
   const beamRef = useRef<THREE.Mesh>(null);
   const recalibrationRef = useRef(0);
+  
+  let machineryState: any = null;
+  try {
+    const context = useSiteSimulation();
+    machineryState = context?.machineryState || null;
+  } catch (err) {
+    // Hook may not be available in all rendering contexts
+    console.debug("MachineryState not available in this context", err);
+  }
+
+  const safeMachineryState: Record<string, MachineryAsset> = machineryState ?? {
+    excavator: { x: 0, y: 0, z: 5, status: "IDLE" },
+    crane: { x: 10, y: 0, z: 10, status: "IDLE" },
+  };
 
   // Base dimensions
   const base_l = 4.0;
@@ -136,6 +258,19 @@ export default function DigitalTwinScene({ deviation, status, baseDepth, newDept
         position={[0, -1.5, 0]}
         cellThickness={0.5}
       />
+      {safeMachineryState &&
+        Object.keys(safeMachineryState).map((type) => {
+          const key = type as "excavator" | "crane";
+          const asset = safeMachineryState[key];
+          return (
+            <MachineryActor
+              key={key}
+              type={key}
+              position={asset}
+              status={asset.status}
+            />
+          );
+        })}
 
       {/* Base Plane */}
       <Plane args={[30, 30]} rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.51, 0]} receiveShadow>

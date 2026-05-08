@@ -36,6 +36,7 @@ export default function Home() {
     currentScheduleImpact,
     deviationHistory,
     viewMode,
+    costHistory,
     triggerGenerativeRedesign,
     resetSimulation,
     injectDisaster
@@ -303,7 +304,7 @@ export default function Home() {
           <DeviationChart data={deviationHistory} />
 
           {/* Cost Trajectory Chart */}
-          <CostChart aiOptimized={aiOptimized} />
+          <CostChart aiOptimized={aiOptimized} costHistory={costHistory} />
 
         </div>
       </div>
