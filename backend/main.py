@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from hashlib import sha256
 from typing import Any, Deque, Dict, List, Literal
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
@@ -263,6 +263,141 @@ async def stream_events():
                 yield "event: heartbeat\ndata: ping\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+OLLAMA_API = "http://127.0.0.1:11434/api"
+OLLAMA_MODEL = "qwen3.5:0.8b"
+
+
+class ChatMessage(BaseModel):
+    role: str  # "user" | "assistant"
+    content: str
+
+
+class ChatRequest(BaseModel):
+    messages: list[ChatMessage]
+    deviation_mm: float = 25.0
+    soil_bearing_capacity: float = 380.0
+    safety_factor: float = 1.5
+
+
+class ChatResponse(BaseModel):
+    reply: str
+    parsed_options: list[Option] | None = None
+
+
+@app.post("/api/chat", response_model=ChatResponse)
+async def chat_endpoint(req: ChatRequest):
+    import httpx
+
+    system_prompt = (
+        "You are a structural engineering AI assistant for the CreaTech Digital Execution System. "
+        "You help engineers design and optimize structural beams and foundations. "
+        f"Current site conditions: soil_bearing_capacity={req.soil_bearing_capacity}kPa, "
+        f"deviation={req.deviation_mm}mm, safety_factor={req.safety_factor}. "
+        "When asked to generate design options, respond with a JSON array inside ```json code blocks "
+        "with objects containing: id, name, depth_m, cost_inr, carbon_tco2e, "
+        "construction_time_days, confidence_score, reason. "
+        "Always recommend safe, code-compliant designs. "
+        "Keep responses concise and technical."
+    )
+
+    ollama_messages = [{"role": "system", "content": system_prompt}]
+    for msg in req.messages:
+        ollama_messages.append({"role": msg.role, "content": msg.content})
+
+    try:
+        async with httpx.AsyncClient(timeout=120) as client:
+            resp = await client.post(
+                f"{OLLAMA_API}/chat",
+                json={"model": OLLAMA_MODEL, "messages": ollama_messages, "stream": False},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            reply = data["message"]["content"]
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Ollama unavailable: {e}")
+
+    import re
+    json_match = re.search(r"```json\n(.*?)\n```", reply, re.DOTALL)
+    parsed_options = None
+    if json_match:
+        try:
+            parsed_options = json.loads(json_match.group(1))
+        except (json.JSONDecodeError, KeyError):
+            pass
+
+    return ChatResponse(reply=reply, parsed_options=parsed_options)
+
+
+class IterativeDesignRequest(BaseModel):
+    context: dict[str, float]
+    previous_options: list[Option] = []
+    selected_option_id: str | None = None
+    feedback: str = ""
+
+
+class IterativeDesignResponse(BaseModel):
+    iteration: int
+    options: list[Option]
+    explanation: str
+
+
+@app.post("/api/iterative-design", response_model=IterativeDesignResponse)
+async def iterative_design(req: IterativeDesignRequest):
+    import httpx
+
+    system_prompt = (
+        "You are a structural optimization AI. Given the current design options and feedback, "
+        "generate 3 improved structural beam options. "
+        f"Current constraints: {json.dumps(req.context)}. "
+        "Return ONLY a JSON array inside ```json code blocks with objects: "
+        "id, name, depth_m, cost_inr, carbon_tco2e, construction_time_days, "
+        "confidence_score, reason. "
+        "Each iteration should refine the design based on the feedback."
+    )
+
+    user_prompt = f"Previous options: {json.dumps([o.model_dump() for o in req.previous_options])}\n"
+    if req.selected_option_id:
+        user_prompt += f"Selected option ID: {req.selected_option_id}\n"
+    if req.feedback:
+        user_prompt += f"Feedback: {req.feedback}\n"
+    user_prompt += "Generate 3 improved structural options."
+
+    try:
+        async with httpx.AsyncClient(timeout=120) as client:
+            resp = await client.post(
+                f"{OLLAMA_API}/chat",
+                json={
+                    "model": OLLAMA_MODEL,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    "stream": False,
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            reply = data["message"]["content"]
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Ollama unavailable: {e}")
+
+    import re
+    json_match = re.search(r"```json\n(.*?)\n```", reply, re.DOTALL)
+    if not json_match:
+        raise HTTPException(status_code=500, detail="Model did not return valid JSON options")
+
+    try:
+        options = json.loads(json_match.group(1))
+    except (json.JSONDecodeError, KeyError) as e:
+        raise HTTPException(status_code=500, detail=f"Failed to parse options: {e}")
+
+    return IterativeDesignResponse(
+        iteration=len(req.previous_options) // 3 + 1,
+        options=[Option(**o) for o in options],
+        explanation=reply[:300],
+    )
 
 
 @app.get("/health")
