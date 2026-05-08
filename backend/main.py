@@ -36,8 +36,8 @@ def deterministic_jitter(seed_payload: str, low: float = 0.9, high: float = 1.1)
 class OptimizationRequest(BaseModel):
     soil_bearing_capacity: float
     deviation_mm: float
-    max_deflection_tolerance: float
-    material_density: float
+    max_deflection_tolerance: float = 15.0
+    material_density: float = 2400.0
     safety_factor: float
 
 
