@@ -254,12 +254,14 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
       try {
         if (db && db.design && db.design.getSummary) {
           const result = await db.design.getSummary("00000000-0000-4000-8000-000000000001");
-          const rows = Array.isArray(result.data) ? result.data : [];
+          const rows = result ? (Array.isArray(result.data) ? result.data : []) : [];
           const totalSaved = rows.reduce(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (sum, row) => sum + (Number((row as any).rework_saved_inr) || 0),
             0
           );
           const totalImpact = rows.reduce(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (sum, row) => sum + (Number((row as any).schedule_impact) || 0),
             0
           );
@@ -421,16 +423,17 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
     );
 
     // Archive the optimization run with calculated figures
-    const archiveRun = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const archiveRun: any = {
       project_id: "00000000-0000-4000-8000-000000000001",
       rework_saved_inr: currentEstimatedCost,
       schedule_impact: currentScheduleImpact,
-    } as any;
+    };
 
     try {
       const result = await db.design.archiveOptimization(archiveRun);
-      console.log("Archive Result:", { data: result.data, error: result.error });
-      if (!result.error) {
+      console.log("Archive Result:", { data: result?.data, error: result?.error });
+      if (result && !result.error) {
         setRecalibrationCount(prev => prev + 1);
         setTotalReworkSaved(prev => prev + currentEstimatedCost);
         setTotalScheduleImpact(prev => prev + currentScheduleImpact);

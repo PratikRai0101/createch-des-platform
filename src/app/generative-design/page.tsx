@@ -196,7 +196,14 @@ export default function GenerativeDesignPage() {
 }
 
 // --- SUB-COMPONENTS ---
-function TradeWeightSlider({ label, value, color, onChange }: any) {
+interface TradeWeightSliderProps {
+  label: string;
+  value: number;
+  color: string;
+  onChange: (value: number) => void;
+}
+
+function TradeWeightSlider({ label, value, color, onChange }: TradeWeightSliderProps) {
   return (
     <div>
       <div className="flex justify-between text-xs mb-1"><span>{label}</span><span className="font-bold">{value}%</span></div>
@@ -205,7 +212,16 @@ function TradeWeightSlider({ label, value, color, onChange }: any) {
   );
 }
 
-function ParameterSlider({ label, value, min, max, val, setVal }: any) {
+interface ParameterSliderProps {
+  label: string;
+  value: string;
+  min: string;
+  max: string;
+  val: number;
+  setVal: (v: number) => void;
+}
+
+function ParameterSlider({ label, value, min, max, val, setVal }: ParameterSliderProps) {
   return (
     <div>
       <div className="flex justify-between text-xs mb-1"><span>{label}</span><span className="text-blue-600 font-bold">{value}</span></div>

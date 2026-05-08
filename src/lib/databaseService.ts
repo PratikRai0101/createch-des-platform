@@ -1,16 +1,16 @@
 import { createClient } from "@supabase/supabase-js";
 import type { SiteSimulationState, Option } from "@/lib/types";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    "Missing Supabase environment variables. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY."
-  );
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return null;
+  }
+
+  return createClient(supabaseUrl, supabaseAnonKey);
 }
-
-const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 
 export type SensorDataRecord = {
   project_id: string;
@@ -56,13 +56,17 @@ async function generateHashProof(details: string): Promise<string> {
 }
 
 class TelemetryService {
+  private get client() {
+    return getSupabaseClient();
+  }
+
   logSensorData(data: SensorDataRecord) {
-    return supabaseClient.schema('telemetry_service').from('sensor_data').insert([data]);
+    return this.client?.schema('telemetry_service').from('sensor_data').insert([data]);
   }
 
   getRecent(project_id: string) {
-    return supabaseClient
-      .schema('telemetry_service')
+    return this.client
+      ?.schema('telemetry_service')
       .from('sensor_data')
       .select("deviation_mm, created_at")
       .eq("project_id", project_id)
@@ -72,6 +76,10 @@ class TelemetryService {
 }
 
 class DesignService {
+  private get client() {
+    return getSupabaseClient();
+  }
+
   async archiveOptimization(run: OptimizationRunRecord) {
     const payload = {
       project_id: "00000000-0000-4000-8000-000000000001",
@@ -79,14 +87,14 @@ class DesignService {
       schedule_impact: 0,
     };
     console.log("SENDING DATA:", payload);
-    const result = await supabaseClient.schema('ai_design_service').from('optimization_runs').insert([payload]);
-    console.log("Archive Result:", { data: result.data, error: result.error });
+    const result = await this.client?.schema('ai_design_service').from('optimization_runs').insert([payload]);
+    console.log("Archive Result:", { data: result?.data, error: result?.error });
     return result;
   }
 
   getSummary(project_id: string) {
-    return supabaseClient
-      .schema('ai_design_service')
+    return this.client
+      ?.schema('ai_design_service')
       .from('optimization_runs')
       .select("id, rework_saved_inr")
       .eq("project_id", project_id);
@@ -94,9 +102,13 @@ class DesignService {
 }
 
 class AuditService {
+  private get client() {
+    return getSupabaseClient();
+  }
+
   async createAuditEntry(entry: AuditEntryRecord) {
     const hash_proof = await generateHashProof(entry.details);
-    return supabaseClient.schema('audit_compliance').from('immutable_logs').insert([
+    return this.client?.schema('audit_compliance').from('immutable_logs').insert([
       {
         ...entry,
         hash_proof,

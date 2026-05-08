@@ -125,6 +125,7 @@ export default function DigitalTwinScene({ deviation, status, baseDepth, newDept
   const beamRef = useRef<THREE.Mesh>(null);
   const recalibrationRef = useRef(0);
   
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let machineryState: any = null;
   try {
     const context = useSiteSimulation();

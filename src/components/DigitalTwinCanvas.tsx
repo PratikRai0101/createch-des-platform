@@ -104,8 +104,9 @@ function WebGLCanvas(props: DigitalTwinCanvasProps) {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    // Ensure context is available before rendering Canvas
-    setIsReady(true);
+    startTransition(() => {
+      setIsReady(true);
+    });
   }, []);
 
   useEffect(() => {
