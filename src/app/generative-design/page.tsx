@@ -165,10 +165,10 @@ export default function GenerativeDesignPage() {
                     {opt.reason && <p className="text-[11px] text-gray-500 mb-2">{opt.reason}</p>}
                     <div className="text-xs space-y-1">
                       <div className="flex justify-between"><span className="text-gray-500">Score</span><span className="font-bold text-purple-700">{Math.round((opt.weightedScore ?? 0) * 100)}%</span></div>
-                      <div className="flex justify-between"><span className="text-gray-500">Depth</span><span className="font-mono">{opt.depth_m * 1000}mm</span></div>
-                      <div className="flex justify-between"><span className="text-gray-500">Cost</span><span className="font-mono text-emerald-600">₹{opt.cost_inr.toLocaleString()}</span></div>
-                      <div className="flex justify-between"><span className="text-gray-500">Carbon</span><span className="font-mono">{opt.carbon_tco2e}t</span></div>
-                      <div className="flex justify-between border-t pt-1 mt-1"><span className="text-gray-500">Duration</span><span className="font-mono">{opt.construction_time_days}d</span></div>
+                      <div className="flex justify-between"><span className="text-gray-500">Depth</span><span className="font-mono font-bold">{opt.depth_m * 1000} mm</span></div>
+                      <div className="flex justify-between"><span className="text-gray-500">Cost</span><span className="font-mono font-bold text-emerald-600">₹{opt.cost_inr.toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-500">Carbon</span><span className="font-mono font-bold">{opt.carbon_tco2e} tCO₂e</span></div>
+                      <div className="flex justify-between border-t pt-1 mt-1"><span className="text-gray-500">Duration</span><span className="font-mono font-bold">{opt.construction_time_days} days</span></div>
                     </div>
                   </div>
                 ))}

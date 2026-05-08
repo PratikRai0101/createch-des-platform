@@ -1,6 +1,7 @@
 import asyncio
 import json
 import math
+import re
 from collections import deque
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -269,6 +270,38 @@ OLLAMA_API = "http://127.0.0.1:11434/api"
 OLLAMA_MODEL = "qwen3.5:0.8b"
 
 
+def normalize_option(opt: dict) -> dict:
+    """Clamp AI-generated option values to realistic structural ranges."""
+    depth = float(opt.get("depth_m", 0.5))
+    # If the model outputs mm instead of m (values > 5), convert to meters
+    if depth > 5:
+        depth = depth / 1000
+    depth = max(0.3, min(1.5, round(depth, 3)))
+
+    cost = float(opt.get("cost_inr", 50000))
+    cost = max(20000, min(250000, round(cost, 2)))
+
+    carbon = float(opt.get("carbon_tco2e", 15))
+    carbon = max(3, min(40, round(carbon, 2)))
+
+    days = int(opt.get("construction_time_days", 14))
+    days = max(3, min(60, days))
+
+    confidence = float(opt.get("confidence_score", 0.85))
+    confidence = max(0.5, min(0.99, round(confidence, 2)))
+
+    return {
+        "id": str(opt.get("id", "opt_x")),
+        "name": str(opt.get("name", "Design Option")),
+        "depth_m": depth,
+        "cost_inr": cost,
+        "carbon_tco2e": carbon,
+        "construction_time_days": days,
+        "confidence_score": confidence,
+        "reason": str(opt.get("reason", ""))[:300],
+    }
+
+
 class ChatMessage(BaseModel):
     role: str  # "user" | "assistant"
     content: str
@@ -291,15 +324,20 @@ async def chat_endpoint(req: ChatRequest):
     import httpx
 
     system_prompt = (
-        "You are a structural engineering AI assistant for the CreaTech Digital Execution System. "
-        "You help engineers design and optimize structural beams and foundations. "
+        "You are a structural engineering AI for the CreaTech DES platform. "
+        "Generate structural beam design options as JSON inside ```json code blocks. "
+        "Each object must have: id, name, depth_m (in METERS, range 0.3-1.5), "
+        "cost_inr (in Indian Rupees, range 30000-200000), "
+        "carbon_tco2e (in tonnes CO2e, range 5-30), "
+        "construction_time_days (integer, range 5-40), "
+        "confidence_score (0.0-1.0), reason (one sentence). "
         f"Current site conditions: soil_bearing_capacity={req.soil_bearing_capacity}kPa, "
         f"deviation={req.deviation_mm}mm, safety_factor={req.safety_factor}. "
-        "When asked to generate design options, respond with a JSON array inside ```json code blocks "
-        "with objects containing: id, name, depth_m, cost_inr, carbon_tco2e, "
-        "construction_time_days, confidence_score, reason. "
-        "Always recommend safe, code-compliant designs. "
-        "Keep responses concise and technical."
+        "EXAMPLES of correct values: depth_m=0.55, cost_inr=65000, carbon_tco2e=12.5, "
+        "construction_time_days=14, confidence_score=0.92. "
+        "NEVER use mm for depth — always meters. "
+        "Return ONLY the JSON array inside ```json ... ```. "
+        "Keep reasons under 100 characters."
     )
 
     ollama_messages = [{"role": "system", "content": system_prompt}]
@@ -318,12 +356,13 @@ async def chat_endpoint(req: ChatRequest):
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Ollama unavailable: {e}")
 
-    import re
     json_match = re.search(r"```json\n(.*?)\n```", reply, re.DOTALL)
     parsed_options = None
     if json_match:
         try:
-            parsed_options = json.loads(json_match.group(1))
+            raw = json.loads(json_match.group(1))
+            if isinstance(raw, list):
+                parsed_options = [normalize_option(o) for o in raw]
         except (json.JSONDecodeError, KeyError):
             pass
 
@@ -383,14 +422,17 @@ async def iterative_design(req: IterativeDesignRequest):
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Ollama unavailable: {e}")
 
-    import re
     json_match = re.search(r"```json\n(.*?)\n```", reply, re.DOTALL)
     if not json_match:
         raise HTTPException(status_code=500, detail="Model did not return valid JSON options")
 
     try:
-        options = json.loads(json_match.group(1))
-    except (json.JSONDecodeError, KeyError) as e:
+        raw = json.loads(json_match.group(1))
+        if isinstance(raw, list):
+            options = [normalize_option(o) for o in raw]
+        else:
+            raise ValueError("Expected a JSON array")
+    except (json.JSONDecodeError, KeyError, ValueError) as e:
         raise HTTPException(status_code=500, detail=f"Failed to parse options: {e}")
 
     return IterativeDesignResponse(
