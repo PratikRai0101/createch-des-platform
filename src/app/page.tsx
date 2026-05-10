@@ -64,7 +64,7 @@ export default function Home() {
   return (
     <main className="flex-1 flex flex-col h-full w-full relative bg-[#f8fafc]">
       {/* Topbar */}
-      <header className="bg-white border-b border-gray-200/80 px-8 py-4 flex justify-between items-center sticky top-0 z-10 shadow-sm backdrop-blur-md bg-white/90">
+      <header className="bg-white border-b border-gray-200/80 px-8 py-4 flex justify-between items-center sticky top-0 z-10 shadow-sm backdrop-blur-md bg-white">
         <div>
           <h2 className="text-xl font-bold text-gray-800">Site Execution Dashboard</h2>
           <p className="text-xs text-gray-500 font-medium mt-0.5">
