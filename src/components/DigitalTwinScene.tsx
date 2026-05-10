@@ -12,6 +12,7 @@ interface SceneProps {
   baseDepth: number;
   newDepth: number;
   aiOptimized: boolean;
+  miniMap?: boolean;
 }
 
 type MachineryType = "excavator" | "crane";
@@ -29,9 +30,10 @@ interface MachineryActorProps {
   type: MachineryType;
   position: MachineryAsset;
   status: MachineryStatus;
+  miniMap?: boolean;
 }
 
-function MachineryActor({ type, position, status }: MachineryActorProps) {
+function MachineryActor({ type, position, status, miniMap }: MachineryActorProps) {
   const groupRef = useRef<THREE.Group>(null);
   const armRef = useRef<THREE.Mesh>(null);
   const targetPosition = useMemo(() => new THREE.Vector3(), []);
@@ -107,19 +109,21 @@ function MachineryActor({ type, position, status }: MachineryActorProps) {
         </>
       )}
 
-      <Html position={[0, type === "excavator" ? 0.95 : 2.5, 0]} center style={{ pointerEvents: "none" }} occlude distanceFactor={8} zIndexRange={[20, 0]}>
-        <div className="bg-black/70 border border-white/10 text-white text-[9px] font-mono px-1.5 py-0.5 rounded whitespace-nowrap">
-          <div className="font-bold uppercase tracking-wider">{type}</div>
-          <div style={{ color: statusColor }} className="text-[9px] mt-0.5">
-            {status}
+      {!miniMap && (
+        <Html position={[0, type === "excavator" ? 0.95 : 2.5, 0]} center style={{ pointerEvents: "none" }} occlude distanceFactor={8} zIndexRange={[20, 0]}>
+          <div className="bg-black/70 border border-white/10 text-white text-[9px] font-mono px-1.5 py-0.5 rounded whitespace-nowrap">
+            <div className="font-bold uppercase tracking-wider">{type}</div>
+            <div style={{ color: statusColor }} className="text-[9px] mt-0.5">
+              {status}
+            </div>
           </div>
-        </div>
-      </Html>
+        </Html>
+      )}
     </group>
   );
 }
 
-export default function DigitalTwinScene({ deviation, status, baseDepth, newDepth, aiOptimized }: SceneProps) {
+export default function DigitalTwinScene({ deviation, status, baseDepth, newDepth, aiOptimized, miniMap }: SceneProps) {
   const beamRef = useRef<THREE.Mesh>(null);
   const recalibrationRef = useRef(0);
   
@@ -266,6 +270,7 @@ export default function DigitalTwinScene({ deviation, status, baseDepth, newDept
               type={key}
               position={asset}
               status={asset.status}
+              miniMap={miniMap}
             />
           );
         })}
@@ -279,13 +284,14 @@ export default function DigitalTwinScene({ deviation, status, baseDepth, newDept
       <Cylinder args={[0.2, 0.2, 3, 32]} position={[0, 0, 0]} castShadow receiveShadow material={columnMaterial}>
         <Edges scale={1.01} threshold={15} color="#94a3b8" />
 
-        {/* Foundation Annotation */}
-        <Html position={[-0.5, -1.2, 0]} center style={{ pointerEvents: "none" }} occlude distanceFactor={8} zIndexRange={[20, 0]}>
-          <div className="bg-slate-900/70 backdrop-blur border border-slate-700/50 text-slate-400 text-[8px] font-mono px-1.5 py-0.5 rounded shadow-lg flex flex-col items-center">
-            <span className="text-[#0077c8] font-bold">COL-A1</span>
-            <span>∅400mm</span>
-          </div>
-        </Html>
+        {!miniMap && (
+          <Html position={[-0.5, -1.2, 0]} center style={{ pointerEvents: "none" }} occlude distanceFactor={8} zIndexRange={[20, 0]}>
+            <div className="bg-slate-900/70 backdrop-blur border border-slate-700/50 text-slate-400 text-[8px] font-mono px-1.5 py-0.5 rounded shadow-lg flex flex-col items-center">
+              <span className="text-[#0077c8] font-bold">COL-A1</span>
+              <span>∅400mm</span>
+            </div>
+          </Html>
+        )}
       </Cylinder>
 
       {/* Baseline ghost beam for before/after comparison */}

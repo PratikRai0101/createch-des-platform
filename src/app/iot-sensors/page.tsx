@@ -699,19 +699,18 @@ function JoystickPad({ onMove, onRelease, vector }: JoystickPadProps) {
       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">W</span>
       <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">E</span>
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-1 bg-gray-300 rounded-full" />
-      <motion.div
-        className="absolute w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full border-2 border-white shadow-lg cursor-grab active:cursor-grabbing"
+      <div
+        className="absolute w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full border-2 border-white shadow-lg cursor-grab active:cursor-grabbing transition-transform duration-75 ease-out active:scale-90"
         style={{
           left: '50%',
           top: '50%',
-          translate: `calc(-50% + ${vector.x * 30}px) calc(-50% + ${vector.y * 30}px)`,
+          transform: `translate(-50%, -50%) translate(${vector.x * 30}px, ${vector.y * 30}px)`,
         }}
-        whileTap={{ scale: 0.9 }}
       >
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="w-3 h-3 bg-white/30 rounded-full" />
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
