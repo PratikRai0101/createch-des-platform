@@ -93,7 +93,7 @@ export default function GenerativeDesignPage() {
 
   return (
     <div className="flex-1 flex flex-col h-full w-full bg-[#f8fafc]">
-      <header className="bg-white border-b border-gray-200/80 px-8 py-4 flex justify-between items-center sticky top-0 z-10 shadow-sm backdrop-blur-md bg-white">
+      <header className="bg-white border-b border-gray-200/80 px-8 py-4 flex justify-between items-center sticky top-0 z-50 shadow-sm bg-white">
         <div>
           <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
             <Cpu className="text-[#0077c8]" />
