@@ -18,6 +18,19 @@ import type {
   ViewMode,
 } from "@/types/scenario";
 import { db } from "@/lib/databaseService";
+import {
+  SIMULATION,
+  SOIL,
+  DEPTH,
+  COST,
+  CHART,
+  MACHINERY,
+  GRID,
+  PROJECT,
+  DISASTER,
+  SCHEDULE,
+  WORKER,
+} from "@/lib/constants";
 
 interface CostHistoryItem {
   day: string;
@@ -83,16 +96,17 @@ interface SiteSimulationContextValue {
 const SiteSimulationContext = createContext<SiteSimulationContextValue | null>(null);
 
 const createInitialHistory = () =>
-  Array.from({ length: 10 }).map((_, i) => ({ time: `T-${10 - i}`, dev: 0, safe: 20 }));
+  Array.from({ length: SIMULATION.HISTORY_SIZE }).map((_, i) => ({
+    time: `T-${SIMULATION.HISTORY_SIZE - i}`,
+    dev: 0,
+    safe: SIMULATION.SAFE_LIMIT_MM,
+  }));
 
-const createInitialCostHistory = (): CostHistoryItem[] => [
-  { day: "Mon", projected: 200000, actual: 200000 },
-  { day: "Tue", projected: 300000, actual: 300000 },
-  { day: "Wed", projected: 400000, actual: 400000 },
-  { day: "Thu", projected: 500000, actual: 500000 },
-  { day: "Fri", projected: 600000, actual: 600000 },
-  { day: "Sat", projected: 1000000, actual: 1000000 },
-];
+const createInitialCostHistory = (): CostHistoryItem[] =>
+  CHART.INITIAL_COST_DATA.map((item) => ({
+    ...item,
+    actual: item.projected,
+  }));
 
 const stamp = () => new Date().toISOString().substring(11, 19);
 const API_BASE_URL = process.env.NEXT_PUBLIC_AI_API_BASE_URL ?? "http://127.0.0.1:8000";
@@ -110,9 +124,9 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
   const [isSimulating, setIsSimulating] = useState(false);
   const [deviation, setDeviation] = useState(0);
   const [status, setStatus] = useState<SimulationStatus>("STABLE");
-  const [soilBearingCapacity, setSoilBearingCapacity] = useState(450);
-  const [baseDepth, setBaseDepth] = useState(0.5);
-  const [newDepth, setNewDepth] = useState(0.5);
+  const [soilBearingCapacity, setSoilBearingCapacity] = useState<number>(SOIL.INITIAL_KPA);
+  const [baseDepth, setBaseDepth] = useState<number>(DEPTH.BASE_M);
+  const [newDepth, setNewDepth] = useState<number>(DEPTH.BASE_M);
   const [anomalyDetected, setAnomalyDetected] = useState(false);
   const [aiOptimized, setAiOptimized] = useState(false);
   const [deviationHistory, setDeviationHistory] = useState<DeviationPoint[]>(createInitialHistory());
@@ -123,8 +137,8 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
   const [scenarioEvents, setScenarioEvents] = useState<ScenarioEvent[]>([]);
   const [costHistory, setCostHistory] = useState<CostHistoryItem[]>(createInitialCostHistory());
   const [machineryState, setMachineryState] = useState<MachineryState>({
-    excavator: { x: 0, y: 0, z: 5, status: "IDLE" },
-    crane: { x: 10, y: 0, z: 10, status: "IDLE" },
+    excavator: { x: MACHINERY.EXCAVATOR_INIT.x, y: MACHINERY.EXCAVATOR_INIT.y, z: MACHINERY.EXCAVATOR_INIT.z, status: "IDLE" },
+    crane: { x: MACHINERY.CRANE_INIT.x, y: MACHINERY.CRANE_INIT.y, z: MACHINERY.CRANE_INIT.z, status: "IDLE" },
   });
   const [activeCommands, setActiveCommands] = useState<string[]>([]);
   const [executedCommands, setExecutedCommands] = useState<string[]>([]);
@@ -135,8 +149,8 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
   // Worker cluster position in world coords (approximated from YOLO)
   const workerClusterPos = useMemo(() => ({ x: 0, z: 10 }), []);
 
-  const currentEstimatedCost = useMemo(() => Math.abs(deviation) * 1500, [deviation]);
-  const currentScheduleImpact = useMemo(() => Math.abs(deviation) / 10, [deviation]);
+  const currentEstimatedCost = useMemo(() => Math.abs(deviation) * COST.PER_DEVIATION_MM, [deviation]);
+  const currentScheduleImpact = useMemo(() => Math.abs(deviation) / SCHEDULE.IMPACT_DIVISOR, [deviation]);
 
   useEffect(() => {
     setScenarioEvents([
@@ -162,7 +176,7 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
         title,
         detail,
       };
-      setScenarioEvents((curr) => [...curr.slice(-19), event]);
+      setScenarioEvents((curr) => [...curr.slice(-SIMULATION.MAX_PUSHED_EVENTS), event]);
     },
     []
   );
@@ -181,7 +195,7 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
         });
       });
 
-      return Array.from(merged.values()).slice(-30);
+      return Array.from(merged.values()).slice(-SIMULATION.MAX_EVENTS);
     });
   }, []);
 
@@ -191,14 +205,14 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
     if (isSimulating && !aiOptimized) {
       interval = setInterval(() => {
         setSoilBearingCapacity((prev) => {
-          const drop = prev - Math.random() * 15;
-          return drop > 250 ? drop : 250;
+          const drop = prev - Math.random() * SOIL.DROP_RANGE_MAX;
+          return drop > SOIL.MIN_KPA ? drop : SOIL.MIN_KPA;
         });
 
         setDeviation((prev) => {
-          const updatedDeviation = prev + Math.random() * 5;
+          const updatedDeviation = prev + Math.random() * SIMULATION.DEVIATION_INCREMENT_MAX;
 
-          if (updatedDeviation > 20) {
+          if (updatedDeviation > SIMULATION.DEVIATION_THRESHOLD_MM) {
             isFixLoggedRef.current = false;
             setAnomalyDetected((alreadyDetected) => {
               if (!alreadyDetected) {
@@ -212,23 +226,23 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
               return true;
             });
             setStatus("CRITICAL");
-            setNewDepth(baseDepth + Math.abs(updatedDeviation) * 0.005);
+            setNewDepth(baseDepth + Math.abs(updatedDeviation) * DEPTH.INCREMENT_PER_MM);
           }
 
-          const cappedDeviation = updatedDeviation > 50 ? 50 : updatedDeviation;
+          const cappedDeviation = updatedDeviation > SIMULATION.DEVIATION_CAP_MM ? SIMULATION.DEVIATION_CAP_MM : updatedDeviation;
 
           setDeviationHistory((curr) => [
             ...curr.slice(1),
             {
               time: stamp(),
               dev: Number(cappedDeviation.toFixed(1)),
-              safe: 20,
+              safe: SIMULATION.SAFE_LIMIT_MM,
             },
           ]);
 
           setCostHistory((curr) => {
-            const costBased = Math.abs(cappedDeviation) * 1500;
-            const dayIndex = Math.floor((Date.now() / 1500) % 6);
+            const costBased = Math.abs(cappedDeviation) * COST.PER_DEVIATION_MM;
+            const dayIndex = Math.floor((Date.now() / SIMULATION.TICK_INTERVAL_MS) % CHART.INITIAL_COST_DATA.length);
             const updated = [...curr];
             updated[dayIndex] = {
               ...updated[dayIndex],
@@ -239,7 +253,7 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
 
           return cappedDeviation;
         });
-      }, 1500);
+      }, SIMULATION.TICK_INTERVAL_MS);
     }
 
     return () => {
@@ -253,7 +267,7 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
     const fetchRecalibrationSummary = async () => {
       try {
         if (db && db.design && db.design.getSummary) {
-          const result = await db.design.getSummary("00000000-0000-4000-8000-000000000001");
+          const result = await db.design.getSummary(PROJECT.DEFAULT_ID);
           const rows = result ? (Array.isArray(result.data) ? result.data : []) : [];
           const totalSaved = rows.reduce(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -281,7 +295,7 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
   }, []);
 
   useEffect(() => {
-    if (currentEstimatedCost > 100000 && !scenarioEvents.some(e => e.title === "High Financial Risk Detected")) {
+    if (currentEstimatedCost > COST.HIGH_RISK_THRESHOLD && !scenarioEvents.some(e => e.title === "High Financial Risk Detected")) {
       pushEvent(
         "DETECT",
         "warning",
@@ -296,7 +310,7 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
 
     const pullPipelineEvents = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/events/latest?limit=12`);
+        const response = await fetch(`${API_BASE_URL}/api/events/latest?limit=${SIMULATION.API_LIMIT}`);
 
         if (!response.ok) {
           throw new Error(`Pipeline endpoint status: ${response.status}`);
@@ -318,7 +332,7 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
     };
 
     pullPipelineEvents();
-    const interval = window.setInterval(pullPipelineEvents, 5000);
+    const interval = window.setInterval(pullPipelineEvents, SIMULATION.POLLING_INTERVAL_MS);
 
     return () => {
       cancelled = true;
@@ -370,7 +384,7 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
           stream?.close();
 
           if (!disposed) {
-            const delay = Math.min(30000, 1000 * 2 ** reconnectAttempts);
+            const delay = Math.min(SIMULATION.MAX_RECONNECT_DELAY_MS, SIMULATION.BASE_RECONNECT_DELAY_MS * 2 ** reconnectAttempts);
             reconnectAttempts += 1;
             reconnectTimer = window.setTimeout(connectStream, delay);
           }
@@ -411,7 +425,7 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
       {
         time: stamp(),
         dev: 0,
-        safe: 20,
+        safe: SIMULATION.SAFE_LIMIT_MM,
       },
     ]);
     setCostHistory(createInitialCostHistory());
@@ -425,7 +439,7 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
     // Archive the optimization run with calculated figures
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const archiveRun: any = {
-      project_id: "00000000-0000-4000-8000-000000000001",
+      project_id: PROJECT.DEFAULT_ID,
       rework_saved_inr: currentEstimatedCost,
       schedule_impact: currentScheduleImpact,
     };
@@ -446,23 +460,23 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
   const injectDisaster = useCallback(() => {
     isFixLoggedRef.current = false;
     setIsSimulating(false);
-    setSoilBearingCapacity(120);
-    setDeviation(48);
+    setSoilBearingCapacity(SOIL.DISASTER_KPA);
+    setDeviation(DISASTER.DEVIATION_MM);
     setAnomalyDetected(true);
     setStatus("CRITICAL");
-    setNewDepth(baseDepth + 48 * 0.005);
+    setNewDepth(baseDepth + DISASTER.DEVIATION_MM * DEPTH.INCREMENT_PER_MM);
     setDeviationHistory((curr) => [
       ...curr.slice(1),
       {
         time: stamp(),
-        dev: 48,
-        safe: 20,
+        dev: DISASTER.DEVIATION_MM,
+        safe: SIMULATION.SAFE_LIMIT_MM,
       },
     ]);
     setCostHistory((curr) =>
       curr.map((item, idx) => ({
         ...item,
-        actual: item.projected + (idx === 3 ? 500000 : 0), // Disaster spike on Thu
+        actual: item.projected + (idx === DISASTER.DAY_INDEX ? DISASTER.SPIKE_INR : 0),
       }))
     );
     pushEvent(
@@ -478,16 +492,16 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
     setIsSimulating(false);
     setDeviation(0);
     setStatus("STABLE");
-    setSoilBearingCapacity(450);
-    setBaseDepth(0.5);
-    setNewDepth(0.5);
+    setSoilBearingCapacity(SOIL.INITIAL_KPA);
+    setBaseDepth(DEPTH.BASE_M);
+    setNewDepth(DEPTH.BASE_M);
     setAnomalyDetected(false);
     setAiOptimized(false);
     setDeviationHistory(createInitialHistory());
     setCostHistory(createInitialCostHistory());
     setMachineryState({
-      excavator: { x: 0, y: 0, z: 5, status: "IDLE" },
-      crane: { x: 10, y: 0, z: 10, status: "IDLE" },
+      excavator: { x: MACHINERY.EXCAVATOR_INIT.x, y: MACHINERY.EXCAVATOR_INIT.y, z: MACHINERY.EXCAVATOR_INIT.z, status: "IDLE" },
+      crane: { x: MACHINERY.CRANE_INIT.x, y: MACHINERY.CRANE_INIT.y, z: MACHINERY.CRANE_INIT.z, status: "IDLE" },
     });
     setActiveCommands([]);
     setMachineryCommandTriggered(false);
@@ -508,9 +522,9 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
       setMachineryState((prev) => ({
         ...prev,
         [type]: {
-          x: Math.max(-20, Math.min(20, coords.x ?? prev[type].x ?? 0)),
+          x: Math.max(-GRID.BOUNDS, Math.min(GRID.BOUNDS, coords.x ?? prev[type].x ?? 0)),
           y: coords.y ?? prev[type].y ?? 0,
-          z: Math.max(-20, Math.min(20, coords.z ?? prev[type].z ?? 5)),
+          z: Math.max(-GRID.BOUNDS, Math.min(GRID.BOUNDS, coords.z ?? prev[type].z ?? MACHINERY.EXCAVATOR_INIT.z)),
           status: coords.status ?? prev[type].status,
         },
       }));
@@ -566,7 +580,7 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
             }
           }
         }, delay);
-        delay += 1000; // 1 second per command
+        delay += SIMULATION.COMMAND_DELAY_MS;
       });
     },
     [pushEvent, updateMachineryPos]
@@ -579,11 +593,11 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
         const newX = prev.excavator.x + deltaX;
         const newZ = prev.excavator.z + deltaZ;
 
-        // Safety envelope: prevent movement within 5 units of worker cluster
+        // Safety envelope: prevent movement within safety distance of worker cluster
         const distToWorker = Math.sqrt(
           (newX - workerClusterPos.x) ** 2 + (newZ - workerClusterPos.z) ** 2
         );
-        if (distToWorker < 5) {
+        if (distToWorker < WORKER.SAFETY_DISTANCE) {
           // Prevent movement towards worker
           const dirX = newX - prev.excavator.x;
           const dirZ = newZ - prev.excavator.z;
@@ -600,8 +614,8 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
           ...prev,
           excavator: {
             ...prev.excavator,
-            x: Math.max(-20, Math.min(20, newX)), // Clamp to grid
-            z: Math.max(-20, Math.min(20, newZ)),
+            x: Math.max(-GRID.BOUNDS, Math.min(GRID.BOUNDS, newX)),
+            z: Math.max(-GRID.BOUNDS, Math.min(GRID.BOUNDS, newZ)),
             status: 'MOVING',
           },
         };
@@ -640,7 +654,7 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
     if (anomalyDetected) {
       return "RECALIBRATE";
     }
-    if (isSimulating && deviation > 5) {
+    if (isSimulating && deviation > SIMULATION.DETECTION_THRESHOLD_MM) {
       return "DETECT";
     }
     return "SENSE";

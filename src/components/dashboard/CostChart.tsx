@@ -10,6 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer
 } from "recharts";
+import { CHART, COST } from "@/lib/constants";
 
 type CostChartPoint = {
   day: string;
@@ -17,14 +18,10 @@ type CostChartPoint = {
   actual: number;
 };
 
-const initialCostData: CostChartPoint[] = [
-  { day: "Mon", projected: 200000, actual: 200000 },
-  { day: "Tue", projected: 300000, actual: 300000 },
-  { day: "Wed", projected: 400000, actual: 400000 },
-  { day: "Thu", projected: 500000, actual: 500000 },
-  { day: "Fri", projected: 600000, actual: 600000 },
-  { day: "Sat", projected: 1000000, actual: 1000000 },
-];
+const initialCostData: CostChartPoint[] = CHART.INITIAL_COST_DATA.map((item) => ({
+  ...item,
+  actual: item.projected,
+}));
 
 export default function CostChart({
   aiOptimized,
@@ -39,7 +36,7 @@ export default function CostChart({
     ...chartData.map(d => Math.max(d.projected, d.actual))
   );
 
-  const yAxisMax = Math.ceil(maxValue * 1.2 / 100000) * 100000;
+  const yAxisMax = Math.ceil(maxValue * COST.CHART_Y_MULTIPLIER / COST.FORMAT_DIVISOR) * COST.FORMAT_DIVISOR;
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex-1 min-h-[250px] flex flex-col">
@@ -67,7 +64,7 @@ export default function CostChart({
               tickLine={false}
               tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }}
               domain={[0, yAxisMax]}
-              tickFormatter={(value) => `₹${(value / 100000).toFixed(0)}L`}
+              tickFormatter={(value) => `₹${(value / COST.FORMAT_DIVISOR).toFixed(0)}L`}
             />
             <Tooltip
               contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}

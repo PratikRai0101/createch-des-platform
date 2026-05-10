@@ -12,6 +12,7 @@ import {
   Cpu,
 } from "lucide-react";
 import { useSiteSimulation } from "@/hooks/useSiteSimulation";
+import { SIMULATION, UI, UNITS } from "@/lib/constants";
 import KpiCard from "@/components/dashboard/KpiCard";
 import SensorRow from "@/components/dashboard/SensorRow";
 import CostChart from "@/components/dashboard/CostChart";
@@ -73,10 +74,10 @@ export default function Home() {
       </header>
 
       {/* Dashboard Content */}
-      <div className="p-8 grid grid-cols-12 gap-6 max-w-[1600px] mx-auto w-full">
+      <div className="p-8 grid grid-cols-12 gap-6 mx-auto w-full" style={{ maxWidth: UI.MAX_WIDTH_PX }}>
         
         {/* Top KPIs */}
-        <div className="col-span-12 grid grid-cols-4 gap-6">
+        <div className="col-span-12 grid gap-6" style={{ gridTemplateColumns: `repeat(${UI.GRID_COLS}, minmax(0, 1fr))` }}>
           <KpiCard title="Active Edge Nodes" value="1,244" trend="+12 online" icon={<Activity />} />
           <KpiCard 
             title="AI Recalibrations" 
@@ -177,7 +178,7 @@ export default function Home() {
                     <AlertTriangle className="w-8 h-8 animate-pulse text-red-200" />
                     <div>
                       <div className="text-xs text-red-200 uppercase tracking-widest mb-0.5">Action Required</div>
-                      <div className="text-sm">Tolerance Exceeded by {(deviation - 20).toFixed(1)}mm</div>
+                      <div className="text-sm">Tolerance Exceeded by {(deviation - SIMULATION.DEVIATION_THRESHOLD_MM).toFixed(1)}mm</div>
                     </div>
                   </motion.div>
                 )}
@@ -197,11 +198,11 @@ export default function Home() {
                     <div className="space-y-3">
                       <div className="flex justify-between gap-12 text-sm border-b border-gray-100 pb-2">
                         <span className="text-gray-500 font-medium">Original Depth</span>
-                        <span className="font-mono line-through text-gray-400">{(baseDepth * 1000).toFixed(0)}mm</span>
+                        <span className="font-mono line-through text-gray-400">{(baseDepth * UNITS.MM_PER_M).toFixed(0)}mm</span>
                       </div>
                       <div className="flex justify-between gap-12 text-sm">
                         <span className="font-bold text-gray-800">New Depth (Z-axis)</span>
-                        <span className="font-mono font-black text-green-600 bg-green-50 px-1.5 rounded">{(newDepth * 1000).toFixed(0)}mm</span>
+                        <span className="font-mono font-black text-green-600 bg-green-50 px-1.5 rounded">{(newDepth * UNITS.MM_PER_M).toFixed(0)}mm</span>
                       </div>
                     </div>
                   </motion.div>

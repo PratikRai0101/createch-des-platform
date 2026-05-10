@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { SiteSimulationState, Option } from "@/lib/types";
+import { PROJECT, SIMULATION } from "@/lib/constants";
 
 function getSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -71,7 +72,7 @@ class TelemetryService {
       .select("deviation_mm, created_at")
       .eq("project_id", project_id)
       .order("created_at", { ascending: true })
-      .limit(10);
+      .limit(SIMULATION.RECENT_RECORDS_LIMIT);
   }
 }
 
@@ -82,7 +83,7 @@ class DesignService {
 
   async archiveOptimization(run: OptimizationRunRecord) {
     const payload = {
-      project_id: "00000000-0000-4000-8000-000000000001",
+      project_id: PROJECT.DEFAULT_ID,
       rework_saved_inr: Number(run.rework_saved_inr),
       schedule_impact: 0,
     };

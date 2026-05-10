@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { Cpu, RefreshCw, SlidersHorizontal, Scale, MessageSquare, X, Zap } from "lucide-react";
 import DigitalTwinCanvas from "@/components/DigitalTwinCanvas";
 import AiChatPanel from "@/components/AiChatPanel";
+import { WEIGHTS, GENERATIVE, UI, DEPTH, UNITS } from "@/lib/constants";
 
 interface GenerativeOption {
   id: string;
@@ -24,9 +25,9 @@ interface Weights {
 }
 
 export default function GenerativeDesignPage() {
-  const [deviation, setDeviation] = useState(25);
-  const [soilCapacity, setSoilCapacity] = useState(380);
-  const [safetyFactor, setSafetyFactor] = useState(1.5);
+  const [deviation, setDeviation] = useState<number>(GENERATIVE.INITIAL_DEVIATION);
+  const [soilCapacity, setSoilCapacity] = useState<number>(GENERATIVE.INITIAL_SOIL_CAPACITY);
+  const [safetyFactor, setSafetyFactor] = useState<number>(GENERATIVE.SAFETY_FACTOR);
 
   const [options, setOptions] = useState<GenerativeOption[]>([]);
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
@@ -34,24 +35,24 @@ export default function GenerativeDesignPage() {
   const [showChat, setShowChat] = useState(false);
   const [recalibrationHistory, setRecalibrationHistory] = useState<string[]>([]);
 
-  const [weights, setWeights] = useState<Weights>({ cost: 33, carbon: 33, time: 34 });
+  const [weights, setWeights] = useState<Weights>(WEIGHTS.DEFAULT);
 
   const updateWeight = (key: keyof Weights, value: number) => {
     setWeights((prev) => {
-      const clamped = Math.max(0, Math.min(100, value));
+      const clamped = Math.max(WEIGHTS.MIN, Math.min(WEIGHTS.MAX, value));
       const diff = clamped - prev[key];
       const others = Object.keys(prev).filter((k) => k !== key) as (keyof Weights)[];
       const totalOther = others.reduce((sum, k) => sum + prev[k], 0);
       if (totalOther === 0) {
-        const even = Math.round(100 / others.length);
+        const even = Math.round(WEIGHTS.TARGET_SUM / others.length);
         return { ...prev, [key]: clamped, ...Object.fromEntries(others.map((k) => [k, even])) } as Weights;
       }
       const newW = { ...prev, [key]: clamped } as Weights;
       others.forEach((k) => {
-        newW[k] = Math.max(0, Math.round(prev[k] - (prev[k] / totalOther) * diff));
+        newW[k] = Math.max(WEIGHTS.MIN, Math.round(prev[k] - (prev[k] / totalOther) * diff));
       });
       const sum = Object.values(newW).reduce((a, b) => a + b, 0);
-      if (sum !== 100) newW[others[others.length - 1]] += 100 - sum;
+      if (sum !== WEIGHTS.TARGET_SUM) newW[others[others.length - 1]] += WEIGHTS.TARGET_SUM - sum;
       return newW;
     });
   };
@@ -70,7 +71,7 @@ export default function GenerativeDesignPage() {
         ...o,
         weightedScore: (weights.cost * n(o.cost_inr, minCost, maxCost) +
           weights.carbon * n(o.carbon_tco2e, minCarbon, maxCarbon) +
-          weights.time * n(o.construction_time_days, minDays, maxDays)) / 100,
+          weights.time * n(o.construction_time_days, minDays, maxDays)) / WEIGHTS.TARGET_SUM,
       }))
       .sort((a, b) => b.weightedScore - a.weightedScore);
   }, [options, weights]);
@@ -110,14 +111,14 @@ export default function GenerativeDesignPage() {
         </div>
       </header>
 
-      <div className="p-8 grid grid-cols-12 gap-6 max-w-[1600px] mx-auto w-full flex-1">
+      <div className="p-8 grid grid-cols-12 gap-6 mx-auto w-full flex-1" style={{ maxWidth: UI.MAX_WIDTH_PX }}>
         {/* Left Column */}
         <div className="col-span-12 lg:col-span-3 flex flex-col gap-6">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2"><SlidersHorizontal className="w-4 h-4" /> Constraints</h3>
             <div className="space-y-6">
-              <ParameterSlider label="Deviation (mm)" value={`${deviation}mm`} min="0" max="50" val={deviation} setVal={setDeviation} />
-              <ParameterSlider label="Soil Capacity (kPa)" value={`${soilCapacity} kPa`} min="250" max="500" val={soilCapacity} setVal={setSoilCapacity} />
+              <ParameterSlider label="Deviation (mm)" value={`${deviation}mm`} min={String(GENERATIVE.DEVIATION_SLIDER_MIN)} max={String(GENERATIVE.DEVIATION_SLIDER_MAX)} val={deviation} setVal={setDeviation} />
+              <ParameterSlider label="Soil Capacity (kPa)" value={`${soilCapacity} kPa`} min={String(GENERATIVE.SOIL_CAPACITY_SLIDER_MIN)} max={String(GENERATIVE.SOIL_CAPACITY_SLIDER_MAX)} val={soilCapacity} setVal={setSoilCapacity} />
             </div>
           </div>
 
@@ -165,7 +166,7 @@ export default function GenerativeDesignPage() {
                     {opt.reason && <p className="text-[11px] text-gray-500 mb-2">{opt.reason}</p>}
                     <div className="text-xs space-y-1">
                       <div className="flex justify-between"><span className="text-gray-500">Score</span><span className="font-bold text-purple-700">{Math.round((opt.weightedScore ?? 0) * 100)}%</span></div>
-                      <div className="flex justify-between"><span className="text-gray-500">Depth</span><span className="font-mono font-bold">{opt.depth_m * 1000} mm</span></div>
+                      <div className="flex justify-between"><span className="text-gray-500">Depth</span><span className="font-mono font-bold">{opt.depth_m * UNITS.MM_PER_M} mm</span></div>
                       <div className="flex justify-between"><span className="text-gray-500">Cost</span><span className="font-mono font-bold text-emerald-600">₹{opt.cost_inr.toLocaleString()}</span></div>
                       <div className="flex justify-between"><span className="text-gray-500">Carbon</span><span className="font-mono font-bold">{opt.carbon_tco2e} tCO₂e</span></div>
                       <div className="flex justify-between border-t pt-1 mt-1"><span className="text-gray-500">Duration</span><span className="font-mono font-bold">{opt.construction_time_days} days</span></div>
@@ -180,7 +181,7 @@ export default function GenerativeDesignPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex-1 min-h-[350px] flex flex-col">
             <div className="flex-1 rounded-xl bg-slate-900 relative overflow-hidden flex items-center justify-center">
               {selectedOption ? (
-                <DigitalTwinCanvas deviation={deviation} status="STABLE" baseDepth={0.5} newDepth={selectedOption.depth_m} aiOptimized={true} />
+                <DigitalTwinCanvas deviation={deviation} status="STABLE" baseDepth={DEPTH.BASE_M} newDepth={selectedOption.depth_m} aiOptimized={true} />
               ) : (
                 <p className="text-gray-500 text-sm">Select an AI option to preview</p>
               )}
