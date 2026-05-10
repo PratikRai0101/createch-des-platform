@@ -100,11 +100,24 @@ export default function AiChatPanel({
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error("Chat error:", msg);
+
+      const isModelMissing = msg.includes("404") || msg.includes("Not Found");
+      const isOllamaDown = msg.includes("ECONNREFUSED") || msg.includes("unavailable");
+
+      let helpText = "";
+      if (isModelMissing) {
+        helpText = `\n\n**Fix:** The AI model \`qwen3.5:0.8b\` is not installed. Run this in your terminal:\n\`\`\`\nollama pull qwen3.5:0.8b\n\`\`\`\nThen restart Ollama and the backend.`;
+      } else if (isOllamaDown) {
+        helpText = `\n\n**Fix:** Make sure Ollama is running:\n\`\`\`\nunset OLLAMA_MODELS && ollama serve\n\`\`\`\nAnd the backend is running:\n\`\`\`\ncd backend && source .venv/bin/activate && uvicorn main:app --reload --port 8000\n\`\`\``;
+      } else {
+        helpText = `\n\n**Fix:** Check that both services are running:\n- Ollama: \`ollama serve\`\n- Backend: \`uvicorn main:app --reload --port 8000\``;
+      }
+
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: `⚠️ **Error:** ${msg}\n\nMake sure the backend and Ollama are running:\n\`\`\`\ncd backend && source .venv/bin/activate && uvicorn main:app --reload --port 8000\n\`\`\`\n\`\`\`\nunset OLLAMA_MODELS && ollama serve\n\`\`\``,
+          content: `⚠️ **Error:** ${msg}${helpText}`,
         },
       ]);
       setConnectionOk(false);
