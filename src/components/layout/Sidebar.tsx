@@ -38,12 +38,12 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
         <div className="bg-white p-2 rounded-lg shadow-sm">
           <Box className="w-6 h-6 text-[#0077c8]" />
         </div>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <h1 className="font-bold text-lg leading-tight tracking-tight">CreaTech</h1>
           <p className="text-[10px] text-blue-200 uppercase tracking-wider font-semibold mt-0.5">Dynamic Engineering</p>
         </div>
-        {/* Close button for mobile */}
-        <button onClick={onClose} className="text-blue-200 hover:text-white p-1" aria-label="Close sidebar">
+        {/* Close button — visible on mobile overlay and desktop collapsed state */}
+        <button onClick={onClose} className="lg:hidden text-blue-200 hover:text-white p-1" aria-label="Close sidebar">
           <X className="w-5 h-5" />
         </button>
       </div>
@@ -119,20 +119,20 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
 
   return (
     <>
-      {/* Mobile Overlay Backdrop */}
+      {/* ── Mobile: overlay backdrop ── */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-40"
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
             onClick={onClose}
           />
         )}
       </AnimatePresence>
 
-      {/* Sidebar (overlay on all screen sizes) */}
+      {/* ── Mobile: slide-over sidebar ── */}
       <AnimatePresence>
         {isOpen && (
           <motion.aside
@@ -140,12 +140,21 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed inset-y-0 left-0 z-50 w-64 bg-[#00447c] text-white flex flex-col shadow-2xl"
+            className="fixed inset-y-0 left-0 z-50 w-64 bg-[#00447c] text-white flex flex-col shadow-2xl lg:hidden"
           >
             {sidebarContent}
           </motion.aside>
         )}
       </AnimatePresence>
+
+      {/* ── Desktop: collapsible fixed sidebar ── */}
+      <aside
+        className={`hidden lg:flex lg:flex-col bg-[#00447c] text-white flex-shrink-0 h-screen sticky top-0 shadow-2xl transition-all duration-300 overflow-hidden ${
+          isOpen ? "w-64" : "w-0"
+        }`}
+      >
+        {sidebarContent}
+      </aside>
     </>
   );
 }
