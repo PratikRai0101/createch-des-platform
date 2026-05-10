@@ -107,6 +107,7 @@ export default function AiChatPanel({
       const isModelMissing = msg.includes("404") || msg.includes("Not Found");
       const isOllamaDown = msg.includes("ECONNREFUSED") || msg.includes("unavailable");
       const isEmptyReply = msg.includes("Empty response");
+      const isTimeout = msg.includes("timeout") || msg.includes("timed out");
 
       let helpText = "";
       if (isModelMissing) {
@@ -115,6 +116,8 @@ export default function AiChatPanel({
         helpText = `\n\n**Fix:** Make sure Ollama is running:\n\`\`\`\nunset OLLAMA_MODELS && ollama serve\n\`\`\`\nAnd the backend is running:\n\`\`\`\ncd backend && source .venv/bin/activate && uvicorn main:app --reload --port 8000\n\`\`\``;
       } else if (isEmptyReply) {
         helpText = `\n\n**Fix:** The AI model returned an empty response. Try:\n1. Restart Ollama: \`unset OLLAMA_MODELS && ollama serve\`\n2. Test the model: \`ollama run qwen3.5:0.8b "hello"\`\n3. If it fails, re-pull: \`ollama pull qwen3.5:0.8b\``;
+      } else if (isTimeout) {
+        helpText = `\n\n**Fix:** The model took too long to respond (timeout). Try:\n1. Restart Ollama: \`unset OLLAMA_MODELS && ollama serve\`\n2. Use simpler queries\n3. \`ollama pull qwen3.5:0.8b\` if model is corrupted`;
       } else {
         helpText = `\n\n**Fix:** Check that both services are running:\n- Ollama: \`ollama serve\`\n- Backend: \`uvicorn main:app --reload --port 8000\``;
       }

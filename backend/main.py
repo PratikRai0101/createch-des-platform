@@ -367,7 +367,7 @@ async def chat_endpoint(req: ChatRequest):
 
     for attempt in range(3):
         try:
-            async with httpx.AsyncClient(timeout=120) as client:
+            async with httpx.AsyncClient(timeout=300) as client:
                 resp = await client.post(
                     f"{OLLAMA_API}/chat",
                     json={"model": OLLAMA_MODEL, "messages": ollama_messages, "stream": False},
@@ -433,7 +433,7 @@ async def iterative_design(req: IterativeDesignRequest):
 
     for attempt in range(3):
         try:
-            async with httpx.AsyncClient(timeout=120) as client:
+            async with httpx.AsyncClient(timeout=300) as client:
                 resp = await client.post(
                     f"{OLLAMA_API}/chat",
                     json={
