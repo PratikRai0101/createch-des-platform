@@ -1,6 +1,7 @@
 import asyncio
 import json
 import math
+import os
 import re
 from collections import deque
 from datetime import datetime, timezone
@@ -283,6 +284,46 @@ async def stream_events():
 OLLAMA_API = "http://127.0.0.1:11434/api"
 OLLAMA_MODEL = "qwen3.5:0.8b"
 
+OPENCODE_GO_API_KEY = os.environ.get("OPENCODE_GO_API_KEY", "")
+
+if OPENCODE_GO_API_KEY:
+    LLM_PROVIDER = "opencode-go"
+    LLM_API_URL = "https://opencode.ai/zen/go/v1/chat/completions"
+    LLM_MODEL = "deepseek-v4-flash"
+    LLM_HEADERS = {"Content-Type": "application/json", "Authorization": f"Bearer {OPENCODE_GO_API_KEY}"}
+else:
+    LLM_PROVIDER = "ollama"
+    LLM_API_URL = f"{OLLAMA_API}/chat"
+    LLM_MODEL = OLLAMA_MODEL
+    LLM_HEADERS = {"Content-Type": "application/json"}
+
+
+async def call_llm(messages: list) -> str:
+    import httpx
+
+    payload = {"model": LLM_MODEL, "messages": messages, "stream": False}
+
+    for attempt in range(3):
+        try:
+            async with httpx.AsyncClient(timeout=300) as client:
+                resp = await client.post(LLM_API_URL, headers=LLM_HEADERS, json=payload)
+                resp.raise_for_status()
+                data = resp.json()
+
+                if LLM_PROVIDER == "opencode-go":
+                    reply = data["choices"][0]["message"]["content"]
+                else:
+                    reply = data["message"]["content"]
+
+                if reply.strip():
+                    return reply
+        except Exception:
+            if attempt == 2:
+                raise
+            continue
+
+    raise HTTPException(status_code=503, detail="Empty response from AI model after retries")
+
 
 def normalize_option(opt: dict) -> dict:
     """Clamp AI-generated option values to realistic structural ranges."""
@@ -336,8 +377,6 @@ class ChatResponse(BaseModel):
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat_endpoint(req: ChatRequest):
-    import httpx
-
     design_keywords = ["generate", "design", "option", "optimize", "beam", "create", "make"]
     user_last_msg = req.messages[-1].content.lower() if req.messages else ""
     wants_design = any(kw in user_last_msg for kw in design_keywords)
@@ -365,24 +404,7 @@ async def chat_endpoint(req: ChatRequest):
     for msg in req.messages:
         ollama_messages.append({"role": msg.role, "content": msg.content})
 
-    for attempt in range(3):
-        try:
-            async with httpx.AsyncClient(timeout=300) as client:
-                resp = await client.post(
-                    f"{OLLAMA_API}/chat",
-                    json={"model": OLLAMA_MODEL, "messages": ollama_messages, "stream": False},
-                )
-                resp.raise_for_status()
-                data = resp.json()
-                reply = data.get("message", {}).get("content", "")
-                if reply.strip():
-                    break
-        except Exception:
-            if attempt == 2:
-                raise HTTPException(status_code=503, detail="Ollama unavailable: model not responding")
-            continue
-    else:
-        raise HTTPException(status_code=503, detail="Empty response from AI model after retries")
+    reply = await call_llm(ollama_messages)
 
     json_match = re.search(r"```json\n(.*?)\n```", reply, re.DOTALL)
     parsed_options = None
@@ -412,7 +434,6 @@ class IterativeDesignResponse(BaseModel):
 
 @app.post("/api/iterative-design", response_model=IterativeDesignResponse)
 async def iterative_design(req: IterativeDesignRequest):
-    import httpx
 
     system_prompt = (
         "You are a structural optimization AI. Given the current design options and feedback, "
@@ -431,31 +452,10 @@ async def iterative_design(req: IterativeDesignRequest):
         user_prompt += f"Feedback: {req.feedback}\n"
     user_prompt += "Generate 3 improved structural options."
 
-    for attempt in range(3):
-        try:
-            async with httpx.AsyncClient(timeout=300) as client:
-                resp = await client.post(
-                    f"{OLLAMA_API}/chat",
-                    json={
-                        "model": OLLAMA_MODEL,
-                        "messages": [
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_prompt},
-                        ],
-                        "stream": False,
-                    },
-                )
-                resp.raise_for_status()
-                data = resp.json()
-                reply = data.get("message", {}).get("content", "")
-                if reply.strip():
-                    break
-        except Exception:
-            if attempt == 2:
-                raise HTTPException(status_code=503, detail="Ollama unavailable: model not responding")
-            continue
-    else:
-        raise HTTPException(status_code=503, detail="Empty response from AI model after retries")
+    reply = await call_llm([
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+    ])
 
     json_match = re.search(r"```json\n(.*?)\n```", reply, re.DOTALL)
     if not json_match:

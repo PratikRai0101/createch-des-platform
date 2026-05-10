@@ -54,6 +54,12 @@ cd "$SCRIPT_DIR"
 echo -e "${BLUE}[3/4]${NC} Starting Python backend (port 8000)..."
 cd backend
 source .venv/bin/activate
+
+# Load environment from .env.local (for OpenCode Go API key, etc.)
+if [ -f "$SCRIPT_DIR/.env.local" ]; then
+  export $(grep -v '^#' "$SCRIPT_DIR/.env.local" | xargs)
+fi
+
 uvicorn main:app --reload --port 8000 &>/tmp/backend.log &
 BACKEND_PID=$!
 cd "$SCRIPT_DIR"
