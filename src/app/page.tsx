@@ -2,7 +2,14 @@
 
 import { useEffect } from "react";
 import dynamic from "next/dynamic";
-const DigitalTwinCanvas = dynamic(() => import("@/components/DigitalTwinCanvas"), { ssr: false });
+const DigitalTwinCanvas = dynamic(() => import("@/components/DigitalTwinCanvas"), { 
+  ssr: false,
+  loading: () => (
+    <div className="animate-pulse bg-gray-100 rounded-2xl h-full min-h-[200px] flex items-center justify-center">
+      <div className="text-gray-400 text-sm font-medium">Loading 3D Scene...</div>
+    </div>
+  )
+});
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity,
