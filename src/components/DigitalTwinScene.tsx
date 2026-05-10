@@ -107,10 +107,10 @@ function MachineryActor({ type, position, status }: MachineryActorProps) {
         </>
       )}
 
-      <Html position={[0, type === "excavator" ? 0.95 : 2.5, 0]} center style={{ pointerEvents: "none" }}>
-        <div className="bg-black/80 border border-white/10 text-white text-[10px] font-mono px-2 py-1 rounded">
-          <div className="font-bold uppercase tracking-widest">{type}</div>
-          <div style={{ color: statusColor }} className="text-[10px] mt-0.5">
+      <Html position={[0, type === "excavator" ? 0.95 : 2.5, 0]} center style={{ pointerEvents: "none" }} occlude distanceFactor={8} zIndexRange={[20, 0]}>
+        <div className="bg-black/70 border border-white/10 text-white text-[9px] font-mono px-1.5 py-0.5 rounded whitespace-nowrap">
+          <div className="font-bold uppercase tracking-wider">{type}</div>
+          <div style={{ color: statusColor }} className="text-[9px] mt-0.5">
             {status}
           </div>
         </div>
@@ -280,8 +280,8 @@ export default function DigitalTwinScene({ deviation, status, baseDepth, newDept
         <Edges scale={1.01} threshold={15} color="#94a3b8" />
 
         {/* Foundation Annotation */}
-        <Html position={[-0.5, -1.2, 0]} center style={{ pointerEvents: "none" }}>
-          <div className="bg-slate-900/80 backdrop-blur border border-slate-700 text-slate-300 text-[9px] font-mono px-2 py-1 rounded shadow-lg flex flex-col items-center">
+        <Html position={[-0.5, -1.2, 0]} center style={{ pointerEvents: "none" }} occlude distanceFactor={8} zIndexRange={[20, 0]}>
+          <div className="bg-slate-900/70 backdrop-blur border border-slate-700/50 text-slate-400 text-[8px] font-mono px-1.5 py-0.5 rounded shadow-lg flex flex-col items-center">
             <span className="text-[#0077c8] font-bold">COL-A1</span>
             <span>∅400mm</span>
           </div>
@@ -304,20 +304,20 @@ export default function DigitalTwinScene({ deviation, status, baseDepth, newDept
         />
 
         {/* Dynamic Measurement Annotation */}
-        <Html position={[0, 0, 0.3]} center style={{ pointerEvents: "none" }}>
+        <Html position={[0, 0, 0.3]} center style={{ pointerEvents: "none" }} occlude distanceFactor={8} zIndexRange={[20, 0]}>
           <div
-            className={`backdrop-blur-md border px-2 py-1 rounded shadow-xl flex flex-col items-center transition-colors font-mono text-[10px] ${
+            className={`backdrop-blur-md border px-1.5 py-0.5 rounded shadow-xl flex flex-col items-center transition-colors font-mono text-[9px] ${
               aiOptimized
-                ? "bg-purple-900/80 border-purple-500 text-purple-200"
+                ? "bg-purple-900/70 border-purple-500/60 text-purple-200"
                 : status === "CRITICAL"
-                  ? "bg-red-900/80 border-red-500 text-red-200 animate-pulse"
-                  : "bg-[#00447c]/80 border-[#0077c8] text-blue-100"
+                  ? "bg-red-900/70 border-red-500/60 text-red-200 animate-pulse"
+                  : "bg-[#00447c]/70 border-[#0077c8]/60 text-blue-100"
             }`}
           >
-            <span className="font-bold opacity-80 mb-0.5">BEAM DEPTH (Z)</span>
-            <span className="text-sm font-black tracking-widest text-white">
+            <span className="font-bold opacity-80 mb-0.5">DEPTH (Z)</span>
+            <span className="text-xs font-black tracking-widest text-white">
               {Math.round((aiOptimized ? newDepth : baseDepth) * 1000)}
-              <span className="text-[9px] ml-0.5 text-white/70">mm</span>
+              <span className="text-[8px] ml-0.5 text-white/70">mm</span>
             </span>
           </div>
         </Html>
@@ -325,9 +325,9 @@ export default function DigitalTwinScene({ deviation, status, baseDepth, newDept
 
       {/* Recalibration summary overlay in scene */}
       {aiOptimized && (
-        <Html position={[2.9, 2.4, 0]} center style={{ pointerEvents: "none" }}>
-          <div className="rounded border border-purple-400/60 bg-purple-950/70 px-2 py-1 text-[10px] font-mono text-purple-100 shadow-lg">
-            Δ Depth +{depthDeltaMm}mm
+        <Html position={[2.9, 2.4, 0]} center style={{ pointerEvents: "none" }} occlude distanceFactor={8} zIndexRange={[20, 0]}>
+          <div className="rounded border border-purple-400/40 bg-purple-950/60 px-1.5 py-0.5 text-[9px] font-mono text-purple-100 shadow-lg">
+            Δ +{depthDeltaMm}mm
           </div>
         </Html>
       )}
@@ -351,9 +351,9 @@ export default function DigitalTwinScene({ deviation, status, baseDepth, newDept
       {deviation > 8 && !aiOptimized && (
         <>
           <Line points={[[2.0, 3.0, 0], [2.0, 2.0, 0]]} color="#fb923c" lineWidth={2} />
-          <Html position={[2.45, 3.0, 0]} center style={{ pointerEvents: "none" }}>
-            <div className="rounded border border-orange-400/70 bg-orange-950/80 px-2 py-1 text-[10px] font-mono text-orange-200 shadow">
-              Load vector ↑
+          <Html position={[2.45, 3.0, 0]} center style={{ pointerEvents: "none" }} occlude distanceFactor={8} zIndexRange={[20, 0]}>
+            <div className="rounded border border-orange-400/50 bg-orange-950/60 px-1.5 py-0.5 text-[9px] font-mono text-orange-200 shadow">
+              Load ↑
             </div>
           </Html>
         </>
@@ -362,11 +362,9 @@ export default function DigitalTwinScene({ deviation, status, baseDepth, newDept
       {/* Deviation Indicator Line (Appears when deviating) */}
       {deviation > 5 && !aiOptimized && (
         <group position={[2.0, 1.5, 0]}>
-          <Html position={[0, -0.6, 0]} center style={{ pointerEvents: "none" }}>
-            <div className="flex items-center gap-2 text-red-500 font-mono text-xs font-bold bg-red-950/80 px-2 py-1 rounded border border-red-500/50">
-              <span>←</span>
-              <span>Δ {deviation.toFixed(1)}mm OUT OF PLUMB</span>
-              <span>→</span>
+          <Html position={[0, -0.6, 0]} center style={{ pointerEvents: "none" }} occlude distanceFactor={8} zIndexRange={[20, 0]}>
+            <div className="flex items-center gap-1.5 text-red-500 font-mono text-[10px] font-bold bg-red-950/70 px-1.5 py-0.5 rounded border border-red-500/40">
+              <span>Δ {deviation.toFixed(1)}mm</span>
             </div>
           </Html>
         </group>

@@ -536,9 +536,9 @@ export default function IotSensorsPage() {
                     onMove={(x, y) => {
                       setJoystickVector({ x, y });
                       if (selectedMachine === 'excavator') {
-                        manualMove(x * 0.5, y * 0.5);
+                        manualMove(x * 0.05, y * 0.05);
                       } else {
-                        manualMoveCrane(x * 0.5, y * 0.5);
+                        manualMoveCrane(x * 0.05, y * 0.05);
                       }
                     }}
                     onRelease={() => setJoystickVector({ x: 0, y: 0 })}
@@ -667,7 +667,7 @@ function JoystickPad({ onMove, onRelease, vector }: JoystickPadProps) {
     const vec = getVector(clientX, clientY);
     onMove(vec.x, vec.y);
     if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = window.setInterval(() => onMove(vec.x, vec.y), 50);
+    intervalRef.current = window.setInterval(() => onMove(vec.x, vec.y), 100);
   }, [getVector, onMove]);
 
   const moveControl = useCallback((clientX: number, clientY: number) => {
@@ -704,7 +704,7 @@ function JoystickPad({ onMove, onRelease, vector }: JoystickPadProps) {
         style={{
           left: '50%',
           top: '50%',
-          translate: `calc(-50% + ${vector.x * 40}px) calc(-50% + ${vector.y * 40}px)`,
+          translate: `calc(-50% + ${vector.x * 30}px) calc(-50% + ${vector.y * 30}px)`,
         }}
         whileTap={{ scale: 0.9 }}
       >
