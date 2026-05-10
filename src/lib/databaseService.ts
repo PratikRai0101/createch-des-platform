@@ -1,6 +1,18 @@
 import { createClient } from "@supabase/supabase-js";
-import type { SiteSimulationState, Option } from "@/lib/types";
+import type { Option } from "@/types/scenario";
 import { PROJECT, SIMULATION } from "@/lib/constants";
+
+interface SiteSimulationState {
+  isSimulating: boolean;
+  deviation: number;
+  status: "STABLE" | "CRITICAL";
+  soilBearingCapacity: number;
+  baseDepth: number;
+  newDepth: number;
+  anomalyDetected: boolean;
+  aiOptimized: boolean;
+  deviationHistory: Array<{ time: string; dev: number; safe: number }>;
+}
 
 function getSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
