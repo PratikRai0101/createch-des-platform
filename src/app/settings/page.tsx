@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings, Shield, Bell, Database, Users, Building, Save } from "lucide-react";
+import { Settings, Shield, Bell, Database, Users, Building, Save, Info } from "lucide-react";
 import { useState } from "react";
 
 export default function SettingsPage() {
@@ -21,8 +21,15 @@ export default function SettingsPage() {
           <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
             <Settings className="text-[#0077c8]" />
             System Configuration
+            <span className="ml-3 px-2.5 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-wider rounded-full border border-amber-200">
+              Demo Mode
+            </span>
           </h2>
           <p className="text-xs text-gray-500 font-medium mt-0.5">Manage Platform Settings & API Connections</p>
+          <div className="mt-2 px-8 py-2 bg-blue-50 border border-blue-100 flex items-center gap-2 text-xs text-blue-700 font-medium rounded-md">
+            <Info className="w-3.5 h-3.5 flex-shrink-0" />
+            Settings are for demonstration purposes. Values are not persisted.
+          </div>
         </div>
         <button className="px-5 py-2 text-sm font-semibold text-white bg-[#0077c8] hover:bg-[#0066ad] rounded-lg shadow-sm flex items-center gap-2 transition-colors">
           <Save className="w-4 h-4" />
