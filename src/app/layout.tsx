@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Sidebar from "@/components/layout/Sidebar";
 import TopScenarioBar from "@/components/layout/TopScenarioBar";
 import { SiteSimulationProvider } from "@/context/SiteSimulationContext";
+import { ToastProvider } from "@/context/ToastContext";
+import ToastBridge from "@/components/ToastBridge";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,11 +31,14 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#f8fafc] text-gray-900 font-sans overflow-hidden flex h-screen`}>
         <SiteSimulationProvider>
-          <Sidebar />
-          <div className="flex-1 flex flex-col h-full overflow-y-auto relative">
-            <TopScenarioBar />
-            {children}
-          </div>
+          <ToastProvider>
+            <ToastBridge />
+            <Sidebar />
+            <div className="flex-1 flex flex-col h-full overflow-y-auto relative">
+              <TopScenarioBar />
+              {children}
+            </div>
+          </ToastProvider>
         </SiteSimulationProvider>
       </body>
     </html>
