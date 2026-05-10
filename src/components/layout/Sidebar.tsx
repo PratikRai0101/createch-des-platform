@@ -10,8 +10,11 @@ import {
   Construction,
   BarChart4,
   Settings,
-  Box
+  Box,
+  Sun,
+  Moon
 } from "lucide-react";
+import { useTheme } from "@/context/ThemeContext";
 import React from "react";
 
 const navItems = [
@@ -25,6 +28,7 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <aside className="w-64 bg-[#00447c] text-white flex flex-col shadow-2xl z-50 flex-shrink-0 h-screen sticky top-0">
@@ -89,6 +93,17 @@ export default function Sidebar() {
           <p className="text-[10px] font-medium text-blue-300">Phase 2 Execution</p>
           <p className="text-[11px] text-white font-black bg-white/10 px-2 py-0.5 rounded">45%</p>
         </div>
+      </div>
+
+      <div className="p-4 border-t border-[#003366]">
+        <button
+          onClick={toggleTheme}
+          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-blue-100 hover:text-white hover:bg-white/5 transition-all w-full"
+          aria-label="Toggle dark mode"
+        >
+          {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          {theme === "dark" ? "Light Mode" : "Dark Mode"}
+        </button>
       </div>
     </aside>
   );

@@ -4,6 +4,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import TopScenarioBar from "@/components/layout/TopScenarioBar";
 import { SiteSimulationProvider } from "@/context/SiteSimulationContext";
 import { ToastProvider } from "@/context/ToastContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import ToastBridge from "@/components/ToastBridge";
 import ConnectionBanner from "@/components/ConnectionBanner";
 import "./globals.css";
@@ -31,7 +32,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#f8fafc] text-gray-900 font-sans overflow-hidden flex h-screen`}>
-        <SiteSimulationProvider>
+        <ThemeProvider>
+          <SiteSimulationProvider>
           <ToastProvider>
             <ConnectionBanner />
             <ToastBridge />
@@ -42,6 +44,7 @@ export default function RootLayout({
             </div>
           </ToastProvider>
         </SiteSimulationProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
