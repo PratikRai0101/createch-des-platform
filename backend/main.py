@@ -323,40 +323,48 @@ class ChatResponse(BaseModel):
 async def chat_endpoint(req: ChatRequest):
     import httpx
 
-    system_prompt = (
-        "You are a structural engineering AI for the CreaTech DES platform. "
-        "You can chat normally with the user — greet them, answer questions, and have conversations. "
-        "Only generate beam design options when the user explicitly asks for them "
-        "(e.g. 'generate options', 'design a beam', 'optimize', etc.). "
-        "When generating designs, output JSON inside ```json code blocks. "
-        "Each object must have: id, name, depth_m (in METERS, range 0.3-1.5), "
-        "cost_inr (in Indian Rupees, range 30000-200000), "
-        "carbon_tco2e (in tonnes CO2e, range 5-30), "
-        "construction_time_days (integer, range 5-40), "
-        "confidence_score (0.0-1.0), reason (one sentence). "
+    design_keywords = ["generate", "design", "option", "optimize", "beam", "create", "make"]
+    user_last_msg = req.messages[-1].content.lower() if req.messages else ""
+    wants_design = any(kw in user_last_msg for kw in design_keywords)
+
+    base_prompt = (
+        "You are a friendly structural engineering AI for the CreaTech DES platform. "
+        "Chat conversationally — greet the user, answer questions, and discuss construction topics. "
         f"Current site conditions: soil_bearing_capacity={req.soil_bearing_capacity}kPa, "
-        f"deviation={req.deviation_mm}mm, safety_factor={req.safety_factor}. "
-        "EXAMPLES of correct values: depth_m=0.55, cost_inr=65000, carbon_tco2e=12.5, "
-        "construction_time_days=14, confidence_score=0.92. "
-        "NEVER use mm for depth — always meters. "
-        "Keep reasons under 100 characters."
+        f"deviation={req.deviation_mm}mm, safety_factor={req.safety_factor}."
     )
 
-    ollama_messages = [{"role": "system", "content": system_prompt}]
+    if wants_design:
+        base_prompt += (
+            "\n\nThe user wants beam design options. Output JSON inside ```json code blocks. "
+            "Each object: id, name, depth_m (meters, 0.3-1.5), cost_inr (30000-200000 INR), "
+            "carbon_tco2e (5-30), construction_time_days (5-40), confidence_score (0.0-1.0), reason. "
+            "Example: {\"id\":\"opt_a\",\"name\":\"Standard\",\"depth_m\":0.55,\"cost_inr\":65000,"
+            "\"carbon_tco2e\":12.5,\"construction_time_days\":14,\"confidence_score\":0.92,\"reason\":\"Balanced design.\"}"
+        )
+
+    ollama_messages = [{"role": "system", "content": base_prompt}]
     for msg in req.messages:
         ollama_messages.append({"role": msg.role, "content": msg.content})
 
-    try:
-        async with httpx.AsyncClient(timeout=120) as client:
-            resp = await client.post(
-                f"{OLLAMA_API}/chat",
-                json={"model": OLLAMA_MODEL, "messages": ollama_messages, "stream": False},
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            reply = data["message"]["content"]
-    except Exception as e:
-        raise HTTPException(status_code=503, detail=f"Ollama unavailable: {e}")
+    for attempt in range(3):
+        try:
+            async with httpx.AsyncClient(timeout=120) as client:
+                resp = await client.post(
+                    f"{OLLAMA_API}/chat",
+                    json={"model": OLLAMA_MODEL, "messages": ollama_messages, "stream": False},
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                reply = data.get("message", {}).get("content", "")
+                if reply.strip():
+                    break
+        except Exception:
+            if attempt == 2:
+                raise HTTPException(status_code=503, detail="Ollama unavailable: model not responding")
+            continue
+    else:
+        raise HTTPException(status_code=503, detail="Empty response from AI model after retries")
 
     json_match = re.search(r"```json\n(.*?)\n```", reply, re.DOTALL)
     parsed_options = None
@@ -405,24 +413,31 @@ async def iterative_design(req: IterativeDesignRequest):
         user_prompt += f"Feedback: {req.feedback}\n"
     user_prompt += "Generate 3 improved structural options."
 
-    try:
-        async with httpx.AsyncClient(timeout=120) as client:
-            resp = await client.post(
-                f"{OLLAMA_API}/chat",
-                json={
-                    "model": OLLAMA_MODEL,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt},
-                    ],
-                    "stream": False,
-                },
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            reply = data["message"]["content"]
-    except Exception as e:
-        raise HTTPException(status_code=503, detail=f"Ollama unavailable: {e}")
+    for attempt in range(3):
+        try:
+            async with httpx.AsyncClient(timeout=120) as client:
+                resp = await client.post(
+                    f"{OLLAMA_API}/chat",
+                    json={
+                        "model": OLLAMA_MODEL,
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_prompt},
+                        ],
+                        "stream": False,
+                    },
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                reply = data.get("message", {}).get("content", "")
+                if reply.strip():
+                    break
+        except Exception:
+            if attempt == 2:
+                raise HTTPException(status_code=503, detail="Ollama unavailable: model not responding")
+            continue
+    else:
+        raise HTTPException(status_code=503, detail="Empty response from AI model after retries")
 
     json_match = re.search(r"```json\n(.*?)\n```", reply, re.DOTALL)
     if not json_match:
