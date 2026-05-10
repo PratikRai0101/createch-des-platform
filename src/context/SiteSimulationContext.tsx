@@ -93,7 +93,7 @@ interface SiteSimulationContextValue {
   pushEvent: (stage: ScenarioStage, severity: EventSeverity, title: string, detail: string) => void;
 }
 
-const SiteSimulationContext = createContext<SiteSimulationContextValue | null>(null);
+export const SiteSimulationContext = createContext<SiteSimulationContextValue | null>(null);
 
 const createInitialHistory = () =>
   Array.from({ length: SIMULATION.HISTORY_SIZE }).map((_, i) => ({

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Activity, Terminal, Wifi, WifiOff, AlertCircle, Camera, Focus, SkipForward, Play, Pause } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSiteSimulation } from "@/hooks/useSiteSimulation";
+import { useMachineryControl } from "@/hooks/useMachineryControl";
 import DigitalTwinCanvas from "@/components/DigitalTwinCanvas";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
@@ -46,7 +47,8 @@ function generateIncidentFrames(tracks: TrackSnapshot[], duration: number, fps: 
 
 export default function IotSensorsPage() {
   const [logs, setLogs] = useState(mockLogStream);
-  const { scenarioEvents, anomalyDetected, viewMode, updateMachineryPos, activeCommands, executedCommands, setActiveCommands, machineryState, executeGCodeQueue, status, deviation, baseDepth, newDepth, aiOptimized, controlMode, setControlMode, manualMove, pushEvent } = useSiteSimulation();
+  const { scenarioEvents, anomalyDetected, viewMode, status, deviation, baseDepth, newDepth, aiOptimized, pushEvent } = useSiteSimulation();
+  const { updateMachineryPos, activeCommands, executedCommands, setActiveCommands, machineryState, executeGCodeQueue, controlMode, setControlMode, manualMove } = useMachineryControl();
   const [replaying, setReplaying] = useState(false);
   const [replayProgress, setReplayProgress] = useState(0);
   const [replayPaused, setReplayPaused] = useState(false);
