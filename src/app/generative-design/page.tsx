@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { Cpu, RefreshCw, SlidersHorizontal, Scale, MessageSquare, X, Zap } from "lucide-react";
 import DigitalTwinCanvas from "@/components/DigitalTwinCanvas";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import AiChatPanel from "@/components/AiChatPanel";
 import { WEIGHTS, GENERATIVE, UI, DEPTH, UNITS } from "@/lib/constants";
 
@@ -181,7 +182,9 @@ export default function GenerativeDesignPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex-1 min-h-[350px] flex flex-col">
             <div className="flex-1 rounded-xl bg-slate-900 relative overflow-hidden flex items-center justify-center">
               {selectedOption ? (
-                <DigitalTwinCanvas deviation={deviation} status="STABLE" baseDepth={DEPTH.BASE_M} newDepth={selectedOption.depth_m} aiOptimized={true} />
+                <ErrorBoundary>
+                  <DigitalTwinCanvas deviation={deviation} status="STABLE" baseDepth={DEPTH.BASE_M} newDepth={selectedOption.depth_m} aiOptimized={true} />
+                </ErrorBoundary>
               ) : (
                 <p className="text-gray-500 text-sm">Select an AI option to preview</p>
               )}

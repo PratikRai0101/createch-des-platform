@@ -19,6 +19,7 @@ import {
   Cpu,
 } from "lucide-react";
 import { useSiteSimulation } from "@/hooks/useSiteSimulation";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { SIMULATION, UI, UNITS } from "@/lib/constants";
 import KpiCard from "@/components/dashboard/KpiCard";
 import SensorRow from "@/components/dashboard/SensorRow";
@@ -165,13 +166,15 @@ export default function Home() {
             </div>
             
             <div className="flex-1 rounded-xl border border-slate-700 flex items-center justify-center relative overflow-hidden min-h-[500px] shadow-inner bg-slate-900">
-              <DigitalTwinCanvas 
-                deviation={deviation} 
-                status={status} 
-                baseDepth={baseDepth} 
-                newDepth={newDepth} 
-                aiOptimized={aiOptimized} 
-              />
+              <ErrorBoundary>
+                <DigitalTwinCanvas 
+                  deviation={deviation} 
+                  status={status} 
+                  baseDepth={baseDepth} 
+                  newDepth={newDepth} 
+                  aiOptimized={aiOptimized} 
+                />
+              </ErrorBoundary>
               
               {/* Critical Overlay Alert */}
               <AnimatePresence>

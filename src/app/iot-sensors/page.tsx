@@ -5,6 +5,7 @@ import { Activity, Terminal, Wifi, WifiOff, AlertCircle, Camera, Focus, SkipForw
 import { motion } from "framer-motion";
 import { useSiteSimulation } from "@/hooks/useSiteSimulation";
 import DigitalTwinCanvas from "@/components/DigitalTwinCanvas";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 const mockLogStream = [
   { ts: "14:02:33.401", level: "INFO", msg: "Node-7A connected. Handshake OK." },
@@ -458,14 +459,16 @@ export default function IotSensorsPage() {
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
                 <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Manual Joystick Control</h4>
                 <div className="mb-4 h-[200px] w-full rounded-2xl overflow-hidden border border-slate-200">
-                  <DigitalTwinCanvas
-                    deviation={0}
-                    status={status}
-                    baseDepth={0.5}
-                    newDepth={0.5}
-                    aiOptimized={false}
-                    miniMap={true}
-                  />
+                  <ErrorBoundary>
+                    <DigitalTwinCanvas
+                      deviation={0}
+                      status={status}
+                      baseDepth={0.5}
+                      newDepth={0.5}
+                      aiOptimized={false}
+                      miniMap={true}
+                    />
+                  </ErrorBoundary>
                 </div>
                 <div className="flex justify-center">
                   <div
