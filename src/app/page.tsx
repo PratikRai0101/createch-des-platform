@@ -17,6 +17,7 @@ import {
   RefreshCw,
   Zap,
   Cpu,
+  CheckCircle2,
 } from "lucide-react";
 import { useSiteSimulation } from "@/hooks/useSiteSimulation";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -35,6 +36,7 @@ export default function Home() {
     newDepth,
     anomalyDetected,
     aiOptimized,
+    latestOption,
     recalibrationCount,
     totalReworkSaved,
     totalScheduleImpact,
@@ -113,6 +115,16 @@ export default function Home() {
             bgColor={aiOptimized ? "bg-green-100" : (anomalyDetected ? "bg-red-100" : "bg-gray-100")}
           />
         </div>
+
+        {latestOption && (
+          <div className="col-span-12 bg-green-50 border border-green-200 rounded-xl px-5 py-3 flex items-center gap-3">
+            <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+            <div className="text-sm">
+              <span className="font-bold text-green-800">Applied: {latestOption.name}</span>
+              <span className="text-green-700"> — depth {latestOption.depth_m}m, ₹{latestOption.cost_inr.toLocaleString()}</span>
+            </div>
+          </div>
+        )}
 
         {/* Left Column: Generative Design View */}
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-6">

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Cpu, RefreshCw, SlidersHorizontal, Scale, MessageSquare, X, Zap } from "lucide-react";
+import { Cpu, RefreshCw, SlidersHorizontal, Scale, MessageSquare, X, Zap, CheckCircle2 } from "lucide-react";
 import DigitalTwinCanvas from "@/components/DigitalTwinCanvas";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import AiChatPanel from "@/components/AiChatPanel";
+import { useSiteSimulation } from "@/hooks/useSiteSimulation";
 import { WEIGHTS, GENERATIVE, UI, DEPTH, UNITS } from "@/lib/constants";
 
 interface GenerativeOption {
@@ -26,6 +27,7 @@ interface Weights {
 }
 
 export default function GenerativeDesignPage() {
+  const { applyGenerativeOption } = useSiteSimulation();
   const [deviation, setDeviation] = useState<number>(GENERATIVE.INITIAL_DEVIATION);
   const [soilCapacity, setSoilCapacity] = useState<number>(GENERATIVE.INITIAL_SOIL_CAPACITY);
   const [safetyFactor, setSafetyFactor] = useState<number>(GENERATIVE.SAFETY_FACTOR);
@@ -189,6 +191,15 @@ export default function GenerativeDesignPage() {
                 <p className="text-gray-500 text-sm">Select an AI option to preview</p>
               )}
             </div>
+            {selectedOption && (
+              <button
+                onClick={() => applyGenerativeOption(selectedOption)}
+                className="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                Apply Selected Design
+              </button>
+            )}
           </div>
         </div>
 

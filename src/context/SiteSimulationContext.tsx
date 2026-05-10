@@ -84,6 +84,8 @@ interface SiteSimulationContextValue {
   updateMachineryPos: (type: MachineryType, coords: Partial<MachineryAsset>) => void;
   setActiveCommands: (commands: string[]) => void;
   executeGCodeQueue: (gcodeArray: string[]) => void;
+  latestOption: { name: string; depth_m: number; cost_inr: number; carbon_tco2e: number; reason: string } | null;
+  applyGenerativeOption: (option: { name: string; depth_m: number; cost_inr: number; carbon_tco2e: number; construction_time_days: number; reason: string }) => void;
   triggerGenerativeRedesign: () => void;
   resetSimulation: () => void;
   injectDisaster: () => void;
@@ -129,6 +131,7 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
   const [newDepth, setNewDepth] = useState<number>(DEPTH.BASE_M);
   const [anomalyDetected, setAnomalyDetected] = useState(false);
   const [aiOptimized, setAiOptimized] = useState(false);
+  const [latestOption, setLatestOption] = useState<{ name: string; depth_m: number; cost_inr: number; carbon_tco2e: number; reason: string } | null>(null);
   const [deviationHistory, setDeviationHistory] = useState<DeviationPoint[]>(createInitialHistory());
   const [recalibrationCount, setRecalibrationCount] = useState(0);
   const [totalReworkSaved, setTotalReworkSaved] = useState(0);
@@ -416,6 +419,18 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
     [pushEvent]
   );
 
+  const applyGenerativeOption = useCallback((option: { name: string; depth_m: number; cost_inr: number; carbon_tco2e: number; construction_time_days: number; reason: string }) => {
+    setLatestOption(option);
+    setNewDepth(option.depth_m);
+    setAiOptimized(true);
+    setRecalibrationCount((prev) => prev + 1);
+
+    const savings = Math.abs(deviation) * 1500;
+    setTotalReworkSaved((prev) => prev + savings);
+
+    pushEvent("RECALIBRATE", "success", "Generative Design Applied", `${option.name}: depth ${option.depth_m}m, cost ₹${option.cost_inr.toLocaleString()}`);
+  }, [deviation, pushEvent]);
+
   const triggerGenerativeRedesign = useCallback(async () => {
     setAiOptimized(true);
     setAnomalyDetected(false);
@@ -672,6 +687,8 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
       newDepth,
       anomalyDetected,
       aiOptimized,
+      latestOption,
+      applyGenerativeOption,
       deviationHistory,
       recalibrationCount,
       totalReworkSaved,
@@ -709,6 +726,8 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
       newDepth,
       anomalyDetected,
       aiOptimized,
+      latestOption,
+      applyGenerativeOption,
       deviationHistory,
       recalibrationCount,
       totalReworkSaved,

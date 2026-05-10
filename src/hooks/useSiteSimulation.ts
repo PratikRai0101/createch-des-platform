@@ -17,6 +17,8 @@ export function useSiteSimulation() {
     newDepth: context.newDepth,
     anomalyDetected: context.anomalyDetected,
     aiOptimized: context.aiOptimized,
+    latestOption: context.latestOption,
+    applyGenerativeOption: context.applyGenerativeOption,
     deviationHistory: context.deviationHistory || [],
     recalibrationCount: context.recalibrationCount,
     totalReworkSaved: context.totalReworkSaved,
