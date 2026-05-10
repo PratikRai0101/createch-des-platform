@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
   Cpu,
@@ -11,6 +11,7 @@ import {
   BarChart4,
   Settings,
   Box,
+  X,
   Sun,
   Moon
 } from "lucide-react";
@@ -26,29 +27,36 @@ const navItems = [
   { icon: <Settings className="w-5 h-5" />, label: "Settings", href: "/settings" },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
 
-  return (
-    <aside className="w-64 bg-[#00447c] text-white flex flex-col shadow-2xl z-50 flex-shrink-0 h-screen sticky top-0">
+  const sidebarContent = (
+    <>
+      {/* Header */}
       <div className="p-6 flex items-center gap-3 border-b border-[#003366]">
         <div className="bg-white p-2 rounded-lg shadow-sm">
           <Box className="w-6 h-6 text-[#0077c8]" />
         </div>
-        <div>
+        <div className="flex-1">
           <h1 className="font-bold text-lg leading-tight tracking-tight">CreaTech</h1>
           <p className="text-[10px] text-blue-200 uppercase tracking-wider font-semibold mt-0.5">Dynamic Engineering</p>
         </div>
+        {/* Close button for mobile */}
+        <button onClick={onClose} className="lg:hidden text-blue-200 hover:text-white p-1" aria-label="Close sidebar">
+          <X className="w-5 h-5" />
+        </button>
       </div>
-      
+
+      {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
-            <Link 
-              key={item.href} 
+            <Link
+              key={item.href}
               href={item.href}
+              onClick={onClose}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all relative overflow-hidden group ${
                 isActive ? "text-white" : "text-blue-100 hover:text-white"
               }`}
@@ -66,7 +74,7 @@ export default function Sidebar() {
               {!isActive && (
                 <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl z-0" />
               )}
-              
+
               <div className="relative z-10 flex items-center gap-3">
                 {item.icon}
                 {item.label}
@@ -80,7 +88,7 @@ export default function Sidebar() {
         <p className="text-[10px] text-blue-200/80 uppercase tracking-widest font-bold mb-1.5">Active Project</p>
         <p className="font-bold text-sm text-white mb-4">L&T Infra Hub - Zone 4</p>
         <div className="bg-[#001122] rounded-full h-2 w-full overflow-hidden shadow-inner">
-          <motion.div 
+          <motion.div
             initial={{ width: 0 }}
             animate={{ width: "45%" }}
             transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
@@ -95,6 +103,7 @@ export default function Sidebar() {
         </div>
       </div>
 
+      {/* Dark Mode Toggle */}
       <div className="p-4 border-t border-[#003366]">
         <button
           onClick={toggleTheme}
@@ -105,6 +114,43 @@ export default function Sidebar() {
           {theme === "dark" ? "Light Mode" : "Dark Mode"}
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile Overlay Backdrop */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={onClose}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Mobile Sidebar (overlay) */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.aside
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            className="fixed inset-y-0 left-0 z-50 w-64 bg-[#00447c] text-white flex flex-col shadow-2xl lg:hidden"
+          >
+            {sidebarContent}
+          </motion.aside>
+        )}
+      </AnimatePresence>
+
+      {/* Desktop Sidebar (always visible) */}
+      <aside className="hidden lg:flex lg:flex-col w-64 bg-[#00447c] text-white flex-shrink-0 h-screen sticky top-0 shadow-2xl">
+        {sidebarContent}
+      </aside>
+    </>
   );
 }
