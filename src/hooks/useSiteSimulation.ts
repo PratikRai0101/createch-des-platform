@@ -1,4 +1,3 @@
-import { useContext } from 'react';
 import { useSiteSimulationContext } from "@/context/SiteSimulationContext";
 
 export function useSiteSimulation() {

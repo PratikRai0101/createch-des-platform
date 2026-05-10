@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { WifiOff } from "lucide-react";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_AI_API_BASE_URL || "http://127.0.0.1:8000";
@@ -8,20 +8,25 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_AI_API_BASE_URL || "http://127.0.0.
 export default function ConnectionBanner() {
   const [connected, setConnected] = useState<boolean | null>(null);
 
-  const checkConnection = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/health`, { signal: AbortSignal.timeout(5000) });
-      setConnected(res.ok);
-    } catch {
-      setConnected(false);
-    }
-  }, []);
-
   useEffect(() => {
-    checkConnection();
-    const interval = setInterval(checkConnection, 30000);
-    return () => clearInterval(interval);
-  }, [checkConnection]);
+    let cancelled = false;
+
+    const check = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/health`, { signal: AbortSignal.timeout(5000) });
+        if (!cancelled) setConnected(res.ok);
+      } catch {
+        if (!cancelled) setConnected(false);
+      }
+    };
+
+    check();
+    const interval = setInterval(check, 30000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
 
   if (connected === null) return null;
 
