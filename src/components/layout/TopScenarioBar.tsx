@@ -11,6 +11,7 @@ import {
   RotateCcw,
   Zap,
   Radar,
+  Menu,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
@@ -55,7 +56,7 @@ const severityClasses: Record<EventSeverity, string> = {
   success: "bg-green-50 text-green-700 border-green-200",
 };
 
-export default function TopScenarioBar() {
+export default function TopScenarioBar({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
   const {
     scenarioStage,
     scenarioEvents,
@@ -115,13 +116,24 @@ export default function TopScenarioBar() {
   return (
     <section className="border-b border-slate-200 bg-white px-6 py-3">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-          <span className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-blue-700">
-            Finals Scenario Flow
-          </span>
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-slate-600">
-            Pipeline: {pipelineConnected ? "API Synced" : "Simulation Fallback"}
-          </span>
+        <div className="flex items-center gap-2">
+          {onOpenSidebar && (
+            <button
+              onClick={onOpenSidebar}
+              className="p-2 bg-white rounded-lg shadow-sm border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+              aria-label="Open sidebar"
+            >
+              <Menu className="w-4 h-4" />
+            </button>
+          )}
+          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+            <span className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-blue-700">
+              Finals Scenario Flow
+            </span>
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-slate-600">
+              Pipeline: {pipelineConnected ? "API Synced" : "Simulation Fallback"}
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
