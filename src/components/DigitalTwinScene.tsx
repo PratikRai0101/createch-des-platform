@@ -41,8 +41,6 @@ function MachineryActor({ type, position, status }: MachineryActorProps) {
       return;
     }
 
-    console.log("3D Position Update:", position);
-
     if (isNaN(position.x) || isNaN(position.z)) {
       targetPosition.set(0, 0, 0);
     } else {
@@ -132,7 +130,6 @@ export default function DigitalTwinScene({ deviation, status, baseDepth, newDept
     machineryState = context?.machineryState || null;
   } catch (err) {
     // Hook may not be available in all rendering contexts
-    console.debug("MachineryState not available in this context", err);
   }
 
   const safeMachineryState: Record<string, MachineryAsset> = machineryState ?? {
