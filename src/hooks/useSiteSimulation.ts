@@ -42,6 +42,7 @@ export function useSiteSimulation() {
     controlMode: context.controlMode,
     setControlMode: context.setControlMode,
     manualMove: context.manualMove,
+    manualMoveCrane: context.manualMoveCrane,
     pushEvent: context.pushEvent,
   };
 }

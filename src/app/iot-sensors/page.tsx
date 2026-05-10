@@ -48,7 +48,7 @@ function generateIncidentFrames(tracks: TrackSnapshot[], duration: number, fps: 
 export default function IotSensorsPage() {
   const [logs, setLogs] = useState(mockLogStream);
   const { scenarioEvents, anomalyDetected, viewMode, status, deviation, baseDepth, newDepth, aiOptimized, pushEvent } = useSiteSimulation();
-  const { updateMachineryPos, activeCommands, executedCommands, setActiveCommands, machineryState, executeGCodeQueue, controlMode, setControlMode, manualMove } = useMachineryControl();
+  const { updateMachineryPos, activeCommands, executedCommands, setActiveCommands, machineryState, executeGCodeQueue, controlMode, setControlMode, manualMove, manualMoveCrane } = useMachineryControl();
   const [replaying, setReplaying] = useState(false);
   const [replayProgress, setReplayProgress] = useState(0);
   const [replayPaused, setReplayPaused] = useState(false);
@@ -56,6 +56,7 @@ export default function IotSensorsPage() {
   const lastExcavatorPosRef = useRef<{ x: number; z: number } | null>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
   const joystickIntervalRef = useRef<number | null>(null);
+  const [selectedMachine, setSelectedMachine] = useState<'excavator' | 'crane'>('excavator');
   const [joystickVector, setJoystickVector] = useState({ x: 0, y: 0 });
 
   const API_BASE_URL = "http://127.0.0.1:8000";
@@ -294,226 +295,278 @@ export default function IotSensorsPage() {
 
       <div className="p-8 grid grid-cols-12 gap-6 max-w-[1600px] mx-auto w-full">
         <div className="col-span-12 grid grid-cols-12 gap-6">
-          <div className="col-span-12 lg:col-span-8 flex flex-col gap-6">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col min-h-[400px]">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
-                  <Camera className="w-4 h-4 text-purple-600" />
-                  Live CCTV (Drone Cam-4) • Autonomous Tracking
-                </h3>
-                <div className="flex items-center gap-2">
-                  <div className="text-xs font-mono font-bold text-red-500 flex items-center gap-2 bg-red-50 px-2 py-1 rounded border border-red-100">
-                    <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                    {replaying ? "REPLAY" : "REC"}
+          {controlMode === 'AUTO' ? (
+            <>
+              <div className="col-span-12 lg:col-span-8 flex flex-col gap-6">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col min-h-[400px]">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                      <Camera className="w-4 h-4 text-purple-600" />
+                      Live CCTV (Drone Cam-4) • Autonomous Tracking
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <div className="text-xs font-mono font-bold text-red-500 flex items-center gap-2 bg-red-50 px-2 py-1 rounded border border-red-100">
+                        <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                        {replaying ? "REPLAY" : "REC"}
+                      </div>
+                      {anomalyDetected && !replaying && (
+                        <button
+                          onClick={startReplay}
+                          className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded hover:bg-amber-100 transition-colors"
+                        >
+                          Replay Incident
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {anomalyDetected && !replaying && (
-                    <button
-                      onClick={startReplay}
-                      className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded hover:bg-amber-100 transition-colors"
-                    >
-                      Replay Incident
-                    </button>
+
+                  <div
+                    className={`flex-1 bg-slate-900 rounded-xl relative overflow-hidden flex items-center justify-center border ${
+                      anomalyDetected && !replaying ? "border-red-500/80" : "border-slate-700"
+                    }`}
+                  >
+                    <div
+                      className="absolute inset-0 opacity-80 bg-cover bg-center mix-blend-luminosity"
+                      style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1563050912-ceb738fcc84e?auto=format&fit=crop&q=80&w=1600")' }}
+                    ></div>
+
+                    <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+
+                    {replaying && currentFrame
+                      ? currentFrame.map((track) => {
+                          const original = cvTracks.find((t) => t.label === track.label);
+                          return original ? (
+                            <YoloBox key={track.label} {...original} driftX={track.driftX} driftY={track.driftY} replayPhase={replayPhase} replaying={true} />
+                          ) : null;
+                        })
+                      : cvTracks.map((track) => <YoloBox key={track.label} {...track} />)}
+
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-30 text-white pointer-events-none">
+                      <Focus className="w-24 h-24" />
+                    </div>
+                  </div>
+
+                  <div className="mt-3 rounded-lg border border-slate-700 bg-slate-900/90 px-3 py-2 text-[11px] text-slate-300 font-mono">
+                    <span className="text-slate-500">Inference Status:</span>{" "}
+                    {replaying
+                      ? "Replaying incident. Drone feed is using recorded frames."
+                      : anomalyDetected
+                        ? "Anomaly linked to recalibration workflow. Awaiting AI structural response."
+                        : "All tracked objects within operational safety envelope."}
+                  </div>
+
+                  {replaying && (
+                    <div className="mt-3 rounded-xl border border-slate-200 bg-slate-100 p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={toggleReplayPause}
+                            className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-700 hover:bg-slate-50"
+                          >
+                            {replayPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
+                          </button>
+                          <span className="text-[11px] font-bold text-slate-600">
+                            {replayPaused ? "Paused" : "Playing"} — {(replayPhase * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setReplaying(false);
+                            setReplayProgress(0);
+                          }}
+                          className="text-xs font-bold text-slate-600 border border-slate-300 px-2 py-1 rounded hover:bg-slate-200"
+                        >
+                          <SkipForward className="w-3 h-3 inline" /> End Replay
+                        </button>
+                      </div>
+                      <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                        <div className="h-full bg-amber-500 rounded-full transition-all" style={{ width: `${replayPhase * 100}%` }}></div>
+                      </div>
+                      <div className="flex justify-between mt-1.5 text-[10px] text-slate-500 font-medium">
+                        <span>Normal Operations</span>
+                        <span>Anomaly Peak</span>
+                        <span>Recovery</span>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
 
-              <div
-                className={`flex-1 bg-slate-900 rounded-xl relative overflow-hidden flex items-center justify-center border ${
-                  anomalyDetected && !replaying ? "border-red-500/80" : "border-slate-700"
-                }`}
-              >
-                <div
-                  className="absolute inset-0 opacity-80 bg-cover bg-center mix-blend-luminosity"
-                  style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1563050912-ceb738fcc84e?auto=format&fit=crop&q=80&w=1600")' }}
-                ></div>
-
-                <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
-
-                {replaying && currentFrame
-                  ? currentFrame.map((track) => {
-                      const original = cvTracks.find((t) => t.label === track.label);
-                      return original ? (
-                        <YoloBox key={track.label} {...original} driftX={track.driftX} driftY={track.driftY} replayPhase={replayPhase} replaying={true} />
-                      ) : null;
-                    })
-                  : cvTracks.map((track) => <YoloBox key={track.label} {...track} />)}
-
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-30 text-white pointer-events-none">
-                  <Focus className="w-24 h-24" />
-                </div>
-              </div>
-
-              <div className="mt-3 rounded-lg border border-slate-700 bg-slate-900/90 px-3 py-2 text-[11px] text-slate-300 font-mono">
-                <span className="text-slate-500">Inference Status:</span>{" "}
-                {replaying
-                  ? "Replaying incident. Drone feed is using recorded frames."
-                  : anomalyDetected
-                    ? "Anomaly linked to recalibration workflow. Awaiting AI structural response."
-                    : "All tracked objects within operational safety envelope."}
-              </div>
-
-              {replaying && (
-                <div className="mt-3 rounded-xl border border-slate-200 bg-slate-100 p-3">
-                  <div className="flex items-center justify-between mb-2">
+              <div className="col-span-12 lg:col-span-4 flex flex-col gap-6">
+                <div className="bg-[#0f172a] rounded-2xl shadow-xl border border-slate-700 p-1 flex-1 min-h-[400px] flex flex-col overflow-hidden relative">
+                  <div className="bg-slate-800 rounded-t-xl px-4 py-2 flex items-center justify-between border-b border-slate-700">
                     <div className="flex items-center gap-2">
-                      <button
-                        onClick={toggleReplayPause}
-                        className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-700 hover:bg-slate-50"
-                      >
-                        {replayPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
-                      </button>
-                      <span className="text-[11px] font-bold text-slate-600">
-                        {replayPaused ? "Paused" : "Playing"} — {(replayPhase * 100).toFixed(0)}%
-                      </span>
+                      <Terminal className="w-4 h-4 text-emerald-400" />
+                      <span className="text-xs font-mono font-bold text-slate-300">Edge Gateway Terminal</span>
                     </div>
-                    <button
-                      onClick={() => {
-                        setReplaying(false);
-                        setReplayProgress(0);
-                      }}
-                      className="text-xs font-bold text-slate-600 border border-slate-300 px-2 py-1 rounded hover:bg-slate-200"
-                    >
-                      <SkipForward className="w-3 h-3 inline" /> End Replay
-                    </button>
+                    <div className="flex gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                      <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
+                      <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+                    </div>
                   </div>
-                  <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                    <div className="h-full bg-amber-500 rounded-full transition-all" style={{ width: `${replayPhase * 100}%` }}></div>
+
+                  <div ref={terminalRef} className="flex-1 p-4 overflow-y-auto font-mono text-[11px] leading-relaxed space-y-1 scrollbar-hide">
+                    {logs.map((log, i) => (
+                      <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} key={i} className="flex gap-3">
+                        <span className="text-slate-500 shrink-0">[{log.ts}]</span>
+                        <span
+                          className={`shrink-0 font-bold ${
+                            log.level === "INFO" ? "text-blue-400" : log.level === "DATA" ? "text-emerald-400" : log.level === "WARN" ? "text-amber-400" : "text-red-400"
+                          }`}
+                        >
+                          {log.level.padEnd(5)}
+                        </span>
+                        <span className="text-slate-300 break-all">{log.msg}</span>
+                      </motion.div>
+                    ))}
+
+                    {executedCommands.length > 0 && (
+                      <div className="mt-4 rounded-xl border border-slate-700 bg-slate-950/95 p-3">
+                        <div className="flex items-center justify-between mb-2 text-[10px] uppercase tracking-[0.2em] text-slate-400">
+                          <span>Command History</span>
+                          <span>{executedCommands.length} executed</span>
+                        </div>
+                        <div className="space-y-1 text-slate-200 text-[10px] leading-snug">
+                          {executedCommands.slice(-10).map((command, idx) => (
+                            <div key={`${command}-${idx}`} className="rounded px-2 py-1 bg-slate-900/90 border border-slate-800">
+                              <span>{command}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {activeCommands.length > 0 ? (
+                      <div className="mt-4 rounded-xl border border-slate-700 bg-slate-950/95 p-3">
+                        <div className="flex items-center justify-between mb-2 text-[10px] uppercase tracking-[0.2em] text-slate-400">
+                          <span>Active G-Code Queue</span>
+                          <span>{activeCommands.length} lines</span>
+                        </div>
+                        <div className="space-y-1 text-green-400 text-[10px] leading-snug">
+                          {activeCommands.slice(-10).map((command, idx) => (
+                            <div key={`${command}-${idx}`} className="rounded px-2 py-1 bg-slate-900/90 border border-slate-800">
+                              <span>{command}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-4 rounded-xl border border-slate-700 bg-slate-950/95 p-3 text-slate-400 text-[10px] leading-snug">
+                        SYSTEM IDLE - AWAITING COMMANDS
+                      </div>
+                    )}
                   </div>
-                  <div className="flex justify-between mt-1.5 text-[10px] text-slate-500 font-medium">
-                    <span>Normal Operations</span>
-                    <span>Anomaly Peak</span>
-                    <span>Recovery</span>
+
+                  <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,3px_100%] z-10 opacity-20"></div>
+                </div>
+
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                  <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Cross-System Event Timeline</h4>
+                  <div className="space-y-2">
+                    {latestEvents.map((event) => (
+                      <div key={event.id} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                        <p className="text-[11px] font-bold text-gray-700">
+                          {event.ts} • {event.stage}
+                        </p>
+                        <p className="text-xs text-gray-600 mt-0.5">{event.title}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              )}
-            </div>
-          </div>
-
-          <div className="col-span-12 lg:col-span-4 flex flex-col gap-6">
-            <div className="bg-[#0f172a] rounded-2xl shadow-xl border border-slate-700 p-1 flex-1 min-h-[400px] flex flex-col overflow-hidden relative">
-              <div className="bg-slate-800 rounded-t-xl px-4 py-2 flex items-center justify-between border-b border-slate-700">
+              </div>
+            </>
+          ) : (
+            <div className="col-span-12 bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-slate-700 p-6 shadow-2xl">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+                  <h3 className="text-lg font-bold text-white">Manual Control Room</h3>
+                </div>
                 <div className="flex items-center gap-2">
-                  <Terminal className="w-4 h-4 text-emerald-400" />
-                  <span className="text-xs font-mono font-bold text-slate-300">Edge Gateway Terminal</span>
-                </div>
-                <div className="flex gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
-                  <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
-                  <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+                  <span className="text-xs text-slate-400 font-medium mr-2">Controlling:</span>
+                  <button
+                    onClick={() => setSelectedMachine('excavator')}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                      selectedMachine === 'excavator'
+                        ? 'bg-yellow-500 text-yellow-900 shadow-lg'
+                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    }`}
+                  >
+                    ⛟ Excavator
+                  </button>
+                  <button
+                    onClick={() => setSelectedMachine('crane')}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                      selectedMachine === 'crane'
+                        ? 'bg-blue-500 text-blue-900 shadow-lg'
+                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    }`}
+                  >
+                    🏗️ Crane
+                  </button>
                 </div>
               </div>
 
-              <div ref={terminalRef} className="flex-1 p-4 overflow-y-auto font-mono text-[11px] leading-relaxed space-y-1 scrollbar-hide">
-                {logs.map((log, i) => (
-                  <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} key={i} className="flex gap-3">
-                    <span className="text-slate-500 shrink-0">[{log.ts}]</span>
-                    <span
-                      className={`shrink-0 font-bold ${
-                        log.level === "INFO" ? "text-blue-400" : log.level === "DATA" ? "text-emerald-400" : log.level === "WARN" ? "text-amber-400" : "text-red-400"
-                      }`}
-                    >
-                      {log.level.padEnd(5)}
-                    </span>
-                    <span className="text-slate-300 break-all">{log.msg}</span>
-                  </motion.div>
-                ))}
-
-                {executedCommands.length > 0 && (
-                  <div className="mt-4 rounded-xl border border-slate-700 bg-slate-950/95 p-3">
-                    <div className="flex items-center justify-between mb-2 text-[10px] uppercase tracking-[0.2em] text-slate-400">
-                      <span>Command History</span>
-                      <span>{executedCommands.length} executed</span>
+              <div className="grid grid-cols-12 gap-6">
+                <div className="col-span-12 lg:col-span-7 flex flex-col items-center justify-center">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
+                      <p className="text-[10px] text-slate-400 uppercase tracking-wider">Position</p>
+                      <p className="text-sm font-mono text-white font-bold">
+                        {selectedMachine === 'excavator'
+                          ? `X: ${machineryState.excavator.x.toFixed(1)}  Z: ${machineryState.excavator.z.toFixed(1)}`
+                          : `X: ${machineryState.crane.x.toFixed(1)}  Z: ${machineryState.crane.z.toFixed(1)}`}
+                      </p>
                     </div>
-                    <div className="space-y-1 text-slate-200 text-[10px] leading-snug">
-                      {executedCommands.slice(-10).map((command, idx) => (
-                        <div key={`${command}-${idx}`} className="rounded px-2 py-1 bg-slate-900/90 border border-slate-800">
-                          <span>{command}</span>
-                        </div>
-                      ))}
+                    <div className="bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
+                      <p className="text-[10px] text-slate-400 uppercase tracking-wider">Status</p>
+                      <p className="text-sm font-bold text-emerald-400">
+                        {selectedMachine === 'excavator' ? machineryState.excavator.status : machineryState.crane.status}
+                      </p>
+                    </div>
+                    <div className="bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
+                      <p className="text-[10px] text-slate-400 uppercase tracking-wider">Vector</p>
+                      <p className="text-sm font-mono text-white font-bold">
+                        {joystickVector.x.toFixed(2)}, {joystickVector.y.toFixed(2)}
+                      </p>
                     </div>
                   </div>
-                )}
-                {activeCommands.length > 0 ? (
-                  <div className="mt-4 rounded-xl border border-slate-700 bg-slate-950/95 p-3">
-                    <div className="flex items-center justify-between mb-2 text-[10px] uppercase tracking-[0.2em] text-slate-400">
-                      <span>Active G-Code Queue</span>
-                      <span>{activeCommands.length} lines</span>
-                    </div>
-                    <div className="space-y-1 text-green-400 text-[10px] leading-snug">
-                      {activeCommands.slice(-10).map((command, idx) => (
-                        <div key={`${command}-${idx}`} className="rounded px-2 py-1 bg-slate-900/90 border border-slate-800">
-                          <span>{command}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-4 rounded-xl border border-slate-700 bg-slate-950/95 p-3 text-slate-400 text-[10px] leading-snug">
-                    SYSTEM IDLE - AWAITING COMMANDS
-                  </div>
-                )}
-              </div>
 
-              <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,3px_100%] z-10 opacity-20"></div>
-            </div>
-
-            {controlMode === 'MANUAL' && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Manual Joystick Control
-                  </h4>
-                  <span className="text-[10px] font-mono text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
-                    {joystickVector.x.toFixed(2)}, {joystickVector.y.toFixed(2)}
-                  </span>
-                </div>
-
-                <div className="mb-4 h-[180px] w-full rounded-xl overflow-hidden border border-slate-200">
-                  <ErrorBoundary>
-                    <DigitalTwinCanvas
-                      deviation={0}
-                      status={status}
-                      baseDepth={0.5}
-                      newDepth={0.5}
-                      aiOptimized={false}
-                      miniMap={true}
-                    />
-                  </ErrorBoundary>
-                </div>
-
-                <div className="flex justify-center">
                   <JoystickPad
                     onMove={(x, y) => {
                       setJoystickVector({ x, y });
-                      manualMove(x * 0.5, y * 0.5);
+                      if (selectedMachine === 'excavator') {
+                        manualMove(x * 0.5, y * 0.5);
+                      } else {
+                        manualMoveCrane(x * 0.5, y * 0.5);
+                      }
                     }}
                     onRelease={() => setJoystickVector({ x: 0, y: 0 })}
                     vector={joystickVector}
                   />
-                </div>
 
-                <div className="mt-3 flex items-center justify-between text-[10px] text-gray-400 font-medium">
-                  <span>← Left</span>
-                  <span className="text-gray-500">Speed: x0.5</span>
-                  <span>Right →</span>
-                </div>
-              </div>
-            )}
-
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-              <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Cross-System Event Timeline</h4>
-              <div className="space-y-2">
-                {latestEvents.map((event) => (
-                  <div key={event.id} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
-                    <p className="text-[11px] font-bold text-gray-700">
-                      {event.ts} • {event.stage}
-                    </p>
-                    <p className="text-xs text-gray-600 mt-0.5">{event.title}</p>
+                  <div className="mt-4 text-[11px] text-slate-500 font-medium">
+                    Click and drag the joystick to move the {selectedMachine}
                   </div>
-                ))}
+                </div>
+
+                <div className="col-span-12 lg:col-span-5 flex flex-col gap-4">
+                  <div className="h-[280px] w-full rounded-xl overflow-hidden border border-slate-700">
+                    <ErrorBoundary>
+                      <DigitalTwinCanvas
+                        deviation={0}
+                        status={status}
+                        baseDepth={0.5}
+                        newDepth={0.5}
+                        aiOptimized={false}
+                        miniMap={true}
+                      />
+                    </ErrorBoundary>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="col-span-12 flex flex-col gap-6">

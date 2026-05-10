@@ -24,7 +24,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <div className="flex-1 flex flex-col h-full overflow-y-auto relative">
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden fixed top-4 left-4 z-30 p-2 bg-white rounded-lg shadow-md border border-gray-200 text-gray-700"
+                className="fixed top-4 left-4 z-30 p-2 bg-white rounded-lg shadow-md border border-gray-200 text-gray-700"
                 aria-label="Open sidebar"
               >
                 <Menu className="w-5 h-5" />

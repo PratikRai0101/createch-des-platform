@@ -92,6 +92,7 @@ interface SiteSimulationContextValue {
   controlMode: 'AUTO' | 'MANUAL';
   setControlMode: (mode: 'AUTO' | 'MANUAL') => void;
   manualMove: (deltaX: number, deltaZ: number) => void;
+  manualMoveCrane: (deltaX: number, deltaZ: number) => void;
   pushEvent: (stage: ScenarioStage, severity: EventSeverity, title: string, detail: string) => void;
 }
 
@@ -639,6 +640,25 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
     [workerClusterPos]
   );
 
+  const manualMoveCrane = useCallback(
+    (deltaX: number, deltaZ: number) => {
+      setMachineryState((prev) => {
+        const newX = prev.crane.x + deltaX;
+        const newZ = prev.crane.z + deltaZ;
+        return {
+          ...prev,
+          crane: {
+            ...prev.crane,
+            x: Math.max(-GRID.BOUNDS, Math.min(GRID.BOUNDS, newX)),
+            z: Math.max(-GRID.BOUNDS, Math.min(GRID.BOUNDS, newZ)),
+            status: 'MOVING',
+          },
+        };
+      });
+    },
+    []
+  );
+
   useEffect(() => {
     if (activeCommands.length === 0 && machineryState.excavator.status !== 'IDLE') {
       setMachineryState((prev) => ({
@@ -713,6 +733,7 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
       controlMode,
       setControlMode,
       manualMove,
+      manualMoveCrane,
       pushEvent,
     }),
     [
@@ -752,6 +773,7 @@ export function SiteSimulationProvider({ children }: { children: React.ReactNode
       controlMode,
       setControlMode,
       manualMove,
+      manualMoveCrane,
       pushEvent,
     ]
   );

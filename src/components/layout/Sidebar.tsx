@@ -43,7 +43,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
           <p className="text-[10px] text-blue-200 uppercase tracking-wider font-semibold mt-0.5">Dynamic Engineering</p>
         </div>
         {/* Close button for mobile */}
-        <button onClick={onClose} className="lg:hidden text-blue-200 hover:text-white p-1" aria-label="Close sidebar">
+        <button onClick={onClose} className="text-blue-200 hover:text-white p-1" aria-label="Close sidebar">
           <X className="w-5 h-5" />
         </button>
       </div>
@@ -126,13 +126,13 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/50 z-40"
             onClick={onClose}
           />
         )}
       </AnimatePresence>
 
-      {/* Mobile Sidebar (overlay) */}
+      {/* Sidebar (overlay on all screen sizes) */}
       <AnimatePresence>
         {isOpen && (
           <motion.aside
@@ -140,17 +140,12 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed inset-y-0 left-0 z-50 w-64 bg-[#00447c] text-white flex flex-col shadow-2xl lg:hidden"
+            className="fixed inset-y-0 left-0 z-50 w-64 bg-[#00447c] text-white flex flex-col shadow-2xl"
           >
             {sidebarContent}
           </motion.aside>
         )}
       </AnimatePresence>
-
-      {/* Desktop Sidebar (always visible) */}
-      <aside className="hidden lg:flex lg:flex-col w-64 bg-[#00447c] text-white flex-shrink-0 h-screen sticky top-0 shadow-2xl">
-        {sidebarContent}
-      </aside>
     </>
   );
 }

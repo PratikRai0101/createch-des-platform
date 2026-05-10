@@ -15,5 +15,6 @@ export function useMachineryControl() {
     executeGCodeQueue: ctx.executeGCodeQueue,
     updateMachineryPos: ctx.updateMachineryPos,
     manualMove: ctx.manualMove,
+    manualMoveCrane: ctx.manualMoveCrane,
   };
 }
