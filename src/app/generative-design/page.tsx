@@ -218,6 +218,7 @@ export default function GenerativeDesignPage() {
                 deviation={deviation}
                 soilBearingCapacity={soilCapacity}
                 safetyFactor={safetyFactor}
+                weights={weights}
                 onOptionsGenerated={handleAiOptions}
                 onIterationComplete={handleIteration}
               />

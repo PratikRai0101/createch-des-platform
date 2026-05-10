@@ -19,6 +19,7 @@ interface AiChatPanelProps {
   deviation: number;
   soilBearingCapacity: number;
   safetyFactor: number;
+  weights?: { cost: number; carbon: number; time: number };
   onOptionsGenerated: (options: GenerativeOption[]) => void;
   onIterationComplete: (explanation: string) => void;
 }
@@ -29,6 +30,7 @@ export default function AiChatPanel({
   deviation,
   soilBearingCapacity,
   safetyFactor,
+  weights,
   onOptionsGenerated,
   onIterationComplete,
 }: AiChatPanelProps) {
@@ -76,6 +78,7 @@ export default function AiChatPanel({
           deviation_mm: deviation,
           soil_bearing_capacity: soilBearingCapacity,
           safety_factor: safetyFactor,
+          weights: weights || { cost: 33, carbon: 33, time: 34 },
         }),
         signal: AbortSignal.timeout(120000),
       });

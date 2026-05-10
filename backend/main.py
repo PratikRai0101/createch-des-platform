@@ -40,6 +40,7 @@ class OptimizationRequest(BaseModel):
     max_deflection_tolerance: float = 15.0
     material_density: float = 2400.0
     safety_factor: float
+    weights: dict[str, float] = Field(default_factory=lambda: {"cost": 33, "carbon": 33, "time": 34})
 
 
 class Option(BaseModel):
@@ -139,12 +140,25 @@ def optimize_geometry(req: OptimizationRequest):
     jitter_b = deterministic_jitter(f"{base_seed}|opt_b")
     jitter_c = deterministic_jitter(f"{base_seed}|opt_c")
 
+    cost_weight = req.weights.get("cost", 33) / 100.0
+    carbon_weight = req.weights.get("carbon", 33) / 100.0
+    time_weight = req.weights.get("time", 34) / 100.0
+
+    # Option A: Lowest Cost — biased by cost weight
+    opt_a_cost = round(45000 + (opt_a_depth * 10000) * jitter_a * (1.5 - cost_weight), 2)
+
+    # Option B: Lowest Carbon — biased by carbon weight
+    opt_b_carbon = round(8.2 + (opt_b_depth * 2) * (1.5 - carbon_weight), 2)
+
+    # Option C: Fastest Execution — biased by time weight
+    opt_c_days = max(5, int(8 * (2 - time_weight)))
+
     options = [
         Option(
             id="opt_a",
             name="Lowest Cost",
             depth_m=opt_a_depth,
-            cost_inr=round(45000 + (opt_a_depth * 10000) * jitter_a, 2),
+            cost_inr=opt_a_cost,
             carbon_tco2e=round(12.5 + (opt_a_depth * 5), 2),
             construction_time_days=14,
             confidence_score=0.88,
@@ -155,7 +169,7 @@ def optimize_geometry(req: OptimizationRequest):
             name="Lowest Carbon",
             depth_m=opt_b_depth,
             cost_inr=round(52000 + (opt_b_depth * 11000) * jitter_b, 2),
-            carbon_tco2e=round(8.2 + (opt_b_depth * 2), 2),
+            carbon_tco2e=opt_b_carbon,
             construction_time_days=16,
             confidence_score=0.92,
             reason="Selects lower-emission structural composition with better safety envelope margin.",
@@ -166,7 +180,7 @@ def optimize_geometry(req: OptimizationRequest):
             depth_m=opt_c_depth,
             cost_inr=round(60000 + (opt_c_depth * 9000) * jitter_c, 2),
             carbon_tco2e=round(15.0 + (opt_c_depth * 4.5), 2),
-            construction_time_days=8,
+            construction_time_days=opt_c_days,
             confidence_score=0.98,
             reason="Uses nearest precast standard depth for shortest site execution turnaround.",
         ),
@@ -312,6 +326,7 @@ class ChatRequest(BaseModel):
     deviation_mm: float = 25.0
     soil_bearing_capacity: float = 380.0
     safety_factor: float = 1.5
+    weights: dict[str, float] = Field(default_factory=lambda: {"cost": 33, "carbon": 33, "time": 34})
 
 
 class ChatResponse(BaseModel):
@@ -335,10 +350,13 @@ async def chat_endpoint(req: ChatRequest):
     )
 
     if wants_design:
+        w = req.weights
         base_prompt += (
             "\n\nThe user wants beam design options. Output JSON inside ```json code blocks. "
             "Each object: id, name, depth_m (meters, 0.3-1.5), cost_inr (30000-200000 INR), "
             "carbon_tco2e (5-30), construction_time_days (5-40), confidence_score (0.0-1.0), reason. "
+            f"User preferences: Cost={w.get('cost',33)}%, Carbon={w.get('carbon',33)}%, Time={w.get('time',34)}%. "
+            "Higher percentage = more important. Optimize each option according to these preferences. "
             "Example: {\"id\":\"opt_a\",\"name\":\"Standard\",\"depth_m\":0.55,\"cost_inr\":65000,"
             "\"carbon_tco2e\":12.5,\"construction_time_days\":14,\"confidence_score\":0.92,\"reason\":\"Balanced design.\"}"
         )
