@@ -536,9 +536,9 @@ export default function IotSensorsPage() {
                     onMove={(x, y) => {
                       setJoystickVector({ x, y });
                       if (selectedMachine === 'excavator') {
-                        manualMove(x * 0.05, y * 0.05);
+                        manualMove(x * 0.2, y * 0.2);
                       } else {
-                        manualMoveCrane(x * 0.05, y * 0.05);
+                        manualMoveCrane(x * 0.2, y * 0.2);
                       }
                     }}
                     onRelease={() => setJoystickVector({ x: 0, y: 0 })}
@@ -650,6 +650,8 @@ interface JoystickPadProps {
 function JoystickPad({ onMove, onRelease, vector }: JoystickPadProps) {
   const padRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<number | null>(null);
+  const currentVecRef = useRef({ x: 0, y: 0 });
+  const isDraggingRef = useRef(false);
 
   const getVector = useCallback((clientX: number, clientY: number) => {
     const rect = padRef.current?.getBoundingClientRect();
@@ -664,18 +666,25 @@ function JoystickPad({ onMove, onRelease, vector }: JoystickPadProps) {
   }, []);
 
   const startControl = useCallback((clientX: number, clientY: number) => {
+    isDraggingRef.current = true;
     const vec = getVector(clientX, clientY);
+    currentVecRef.current = vec;
     onMove(vec.x, vec.y);
     if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = window.setInterval(() => onMove(vec.x, vec.y), 100);
+    intervalRef.current = window.setInterval(() => {
+      onMove(currentVecRef.current.x, currentVecRef.current.y);
+    }, 100);
   }, [getVector, onMove]);
 
   const moveControl = useCallback((clientX: number, clientY: number) => {
+    if (!isDraggingRef.current) return;
     const vec = getVector(clientX, clientY);
+    currentVecRef.current = vec;
     onMove(vec.x, vec.y);
   }, [getVector, onMove]);
 
   const stopControl = useCallback(() => {
+    isDraggingRef.current = false;
     onRelease();
     if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
   }, [onRelease]);
@@ -689,7 +698,6 @@ function JoystickPad({ onMove, onRelease, vector }: JoystickPadProps) {
       onMouseDown={(e) => startControl(e.clientX, e.clientY)}
       onMouseMove={(e) => { if (e.buttons === 1) moveControl(e.clientX, e.clientY); }}
       onMouseUp={stopControl}
-      onMouseLeave={stopControl}
       onTouchStart={(e) => { e.preventDefault(); startControl(e.touches[0].clientX, e.touches[0].clientY); }}
       onTouchMove={(e) => { e.preventDefault(); moveControl(e.touches[0].clientX, e.touches[0].clientY); }}
       onTouchEnd={stopControl}
