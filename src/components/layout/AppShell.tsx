@@ -30,7 +30,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex h-screen">
             <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
             <div className="flex-1 flex flex-col h-full overflow-y-auto relative">
-              <TopScenarioBar onToggleSidebar={toggleSidebar} />
+              <TopScenarioBar onToggleSidebar={toggleSidebar} sidebarOpen={sidebarOpen} />
               {children}
             </div>
           </div>

@@ -56,7 +56,7 @@ const severityClasses: Record<EventSeverity, string> = {
   success: "bg-green-50 text-green-700 border-green-200",
 };
 
-export default function TopScenarioBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
+export default function TopScenarioBar({ onToggleSidebar, sidebarOpen }: { onToggleSidebar?: () => void; sidebarOpen?: boolean }) {
   const {
     scenarioStage,
     scenarioEvents,
@@ -117,7 +117,7 @@ export default function TopScenarioBar({ onToggleSidebar }: { onToggleSidebar?: 
     <section className="border-b border-slate-200 bg-white px-6 py-3">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          {onToggleSidebar && (
+          {onToggleSidebar && !sidebarOpen && (
             <button
               onClick={onToggleSidebar}
               className="p-2 bg-white rounded-lg shadow-sm border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
