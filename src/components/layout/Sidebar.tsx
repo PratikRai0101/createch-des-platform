@@ -42,8 +42,8 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
           <h1 className="font-bold text-lg leading-tight tracking-tight">CreaTech</h1>
           <p className="text-[10px] text-blue-200 uppercase tracking-wider font-semibold mt-0.5">Dynamic Engineering</p>
         </div>
-        {/* Close button — visible on mobile overlay and desktop collapsed state */}
-        <button onClick={onClose} className="lg:hidden text-blue-200 hover:text-white p-1" aria-label="Close sidebar">
+        {/* Close button */}
+        <button onClick={onClose} className="text-blue-200 hover:text-white p-1" aria-label="Close sidebar">
           <X className="w-5 h-5" />
         </button>
       </div>
