@@ -458,9 +458,17 @@ export default function IotSensorsPage() {
             </div>
 
             {controlMode === 'MANUAL' && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-                <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Manual Joystick Control</h4>
-                <div className="mb-4 h-[200px] w-full rounded-2xl overflow-hidden border border-slate-200">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    Manual Joystick Control
+                  </h4>
+                  <span className="text-[10px] font-mono text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
+                    {joystickVector.x.toFixed(2)}, {joystickVector.y.toFixed(2)}
+                  </span>
+                </div>
+
+                <div className="mb-4 h-[180px] w-full rounded-xl overflow-hidden border border-slate-200">
                   <ErrorBoundary>
                     <DigitalTwinCanvas
                       deviation={0}
@@ -472,107 +480,22 @@ export default function IotSensorsPage() {
                     />
                   </ErrorBoundary>
                 </div>
+
                 <div className="flex justify-center">
-                  <div
-                    className="relative w-32 h-32 bg-gray-100 rounded-full border-2 border-gray-300 touch-none select-none"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      const centerX = rect.left + rect.width / 2;
-                      const centerY = rect.top + rect.height / 2;
-                      const deltaX = (e.clientX - centerX) / (rect.width / 2);
-                      const deltaY = (e.clientY - centerY) / (rect.height / 2);
-                      const distance = Math.sqrt(deltaX ** 2 + deltaY ** 2);
-                      const clampedDist = Math.min(distance, 1);
-                      const angle = Math.atan2(deltaY, deltaX);
-                      const x = Math.cos(angle) * clampedDist;
-                      const y = Math.sin(angle) * clampedDist;
+                  <JoystickPad
+                    onMove={(x, y) => {
                       setJoystickVector({ x, y });
-                      if (joystickIntervalRef.current) clearInterval(joystickIntervalRef.current);
-                      joystickIntervalRef.current = window.setInterval(() => {
-                        manualMove(x * 0.5, y * 0.5);
-                      }, 50);
+                      manualMove(x * 0.5, y * 0.5);
                     }}
-                    onMouseMove={(e) => {
-                      if (e.buttons === 1) { // Left mouse button down
-                        e.preventDefault();
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        const centerX = rect.left + rect.width / 2;
-                        const centerY = rect.top + rect.height / 2;
-                        const deltaX = (e.clientX - centerX) / (rect.width / 2);
-                        const deltaY = (e.clientY - centerY) / (rect.height / 2);
-                        const distance = Math.sqrt(deltaX ** 2 + deltaY ** 2);
-                        const clampedDist = Math.min(distance, 1);
-                        const angle = Math.atan2(deltaY, deltaX);
-                        const x = Math.cos(angle) * clampedDist;
-                        const y = Math.sin(angle) * clampedDist;
-                        setJoystickVector({ x, y });
-                      }
-                    }}
-                    onMouseUp={() => {
-                      setJoystickVector({ x: 0, y: 0 });
-                      if (joystickIntervalRef.current) {
-                        clearInterval(joystickIntervalRef.current);
-                        joystickIntervalRef.current = null;
-                      }
-                    }}
-                    onTouchStart={(e) => {
-                      e.preventDefault();
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      const centerX = rect.left + rect.width / 2;
-                      const centerY = rect.top + rect.height / 2;
-                      const touch = e.touches[0];
-                      const deltaX = (touch.clientX - centerX) / (rect.width / 2);
-                      const deltaY = (touch.clientY - centerY) / (rect.height / 2);
-                      const distance = Math.sqrt(deltaX ** 2 + deltaY ** 2);
-                      const clampedDist = Math.min(distance, 1);
-                      const angle = Math.atan2(deltaY, deltaX);
-                      const x = Math.cos(angle) * clampedDist;
-                      const y = Math.sin(angle) * clampedDist;
-                      setJoystickVector({ x, y });
-                      if (joystickIntervalRef.current) clearInterval(joystickIntervalRef.current);
-                      joystickIntervalRef.current = window.setInterval(() => {
-                        manualMove(x * 0.5, y * 0.5);
-                      }, 50);
-                    }}
-                    onTouchMove={(e) => {
-                      e.preventDefault();
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      const centerX = rect.left + rect.width / 2;
-                      const centerY = rect.top + rect.height / 2;
-                      const touch = e.touches[0];
-                      const deltaX = (touch.clientX - centerX) / (rect.width / 2);
-                      const deltaY = (touch.clientY - centerY) / (rect.height / 2);
-                      const distance = Math.sqrt(deltaX ** 2 + deltaY ** 2);
-                      const clampedDist = Math.min(distance, 1);
-                      const angle = Math.atan2(deltaY, deltaX);
-                      const x = Math.cos(angle) * clampedDist;
-                      const y = Math.sin(angle) * clampedDist;
-                      setJoystickVector({ x, y });
-                    }}
-                    onTouchEnd={() => {
-                      setJoystickVector({ x: 0, y: 0 });
-                      if (joystickIntervalRef.current) {
-                        clearInterval(joystickIntervalRef.current);
-                        joystickIntervalRef.current = null;
-                      }
-                    }}
-                  >
-                    <div
-                      className="absolute w-8 h-8 bg-blue-500 rounded-full border-2 border-white shadow-md cursor-pointer"
-                      style={{
-                        left: '50%',
-                        top: '50%',
-                        transform: `translate(-50%, -50%) translate(${joystickVector.x * 40}px, ${joystickVector.y * 40}px)`,
-                      }}
-                      onPointerDown={(e) => {
-                        e.currentTarget.setPointerCapture(e.pointerId);
-                      }}
-                      onPointerUp={(e) => {
-                        e.currentTarget.releasePointerCapture(e.pointerId);
-                      }}
-                    ></div>
-                  </div>
+                    onRelease={() => setJoystickVector({ x: 0, y: 0 })}
+                    vector={joystickVector}
+                  />
+                </div>
+
+                <div className="mt-3 flex items-center justify-between text-[10px] text-gray-400 font-medium">
+                  <span>← Left</span>
+                  <span className="text-gray-500">Speed: x0.5</span>
+                  <span>Right →</span>
                 </div>
               </div>
             )}
@@ -661,6 +584,81 @@ export default function IotSensorsPage() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+interface JoystickPadProps {
+  onMove: (x: number, y: number) => void;
+  onRelease: () => void;
+  vector: { x: number; y: number };
+}
+
+function JoystickPad({ onMove, onRelease, vector }: JoystickPadProps) {
+  const padRef = useRef<HTMLDivElement>(null);
+  const intervalRef = useRef<number | null>(null);
+
+  const getVector = useCallback((clientX: number, clientY: number) => {
+    const rect = padRef.current?.getBoundingClientRect();
+    if (!rect) return { x: 0, y: 0 };
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    let dx = (clientX - centerX) / (rect.width / 2);
+    let dy = (clientY - centerY) / (rect.height / 2);
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 1) { dx /= dist; dy /= dist; }
+    return { x: dx, y: dy };
+  }, []);
+
+  const startControl = useCallback((clientX: number, clientY: number) => {
+    const vec = getVector(clientX, clientY);
+    onMove(vec.x, vec.y);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = window.setInterval(() => onMove(vec.x, vec.y), 50);
+  }, [getVector, onMove]);
+
+  const moveControl = useCallback((clientX: number, clientY: number) => {
+    const vec = getVector(clientX, clientY);
+    onMove(vec.x, vec.y);
+  }, [getVector, onMove]);
+
+  const stopControl = useCallback(() => {
+    onRelease();
+    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+  }, [onRelease]);
+
+  useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current); }, []);
+
+  return (
+    <div
+      ref={padRef}
+      className="relative w-48 h-48 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full border-2 border-gray-300 touch-none select-none shadow-inner cursor-pointer"
+      onMouseDown={(e) => startControl(e.clientX, e.clientY)}
+      onMouseMove={(e) => { if (e.buttons === 1) moveControl(e.clientX, e.clientY); }}
+      onMouseUp={stopControl}
+      onMouseLeave={stopControl}
+      onTouchStart={(e) => { e.preventDefault(); startControl(e.touches[0].clientX, e.touches[0].clientY); }}
+      onTouchMove={(e) => { e.preventDefault(); moveControl(e.touches[0].clientX, e.touches[0].clientY); }}
+      onTouchEnd={stopControl}
+    >
+      <span className="absolute top-2 left-1/2 -translate-x-1/2 text-[10px] font-bold text-gray-400">N</span>
+      <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] font-bold text-gray-400">S</span>
+      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">W</span>
+      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">E</span>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-1 bg-gray-300 rounded-full" />
+      <motion.div
+        className="absolute w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full border-2 border-white shadow-lg cursor-grab active:cursor-grabbing"
+        style={{
+          left: '50%',
+          top: '50%',
+          translate: `calc(-50% + ${vector.x * 40}px) calc(-50% + ${vector.y * 40}px)`,
+        }}
+        whileTap={{ scale: 0.9 }}
+      >
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-3 h-3 bg-white/30 rounded-full" />
+        </div>
+      </motion.div>
     </div>
   );
 }
