@@ -5,6 +5,7 @@ import TopScenarioBar from "@/components/layout/TopScenarioBar";
 import { SiteSimulationProvider } from "@/context/SiteSimulationContext";
 import { ToastProvider } from "@/context/ToastContext";
 import ToastBridge from "@/components/ToastBridge";
+import ConnectionBanner from "@/components/ConnectionBanner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -32,6 +33,7 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#f8fafc] text-gray-900 font-sans overflow-hidden flex h-screen`}>
         <SiteSimulationProvider>
           <ToastProvider>
+            <ConnectionBanner />
             <ToastBridge />
             <Sidebar />
             <div className="flex-1 flex flex-col h-full overflow-y-auto relative">
