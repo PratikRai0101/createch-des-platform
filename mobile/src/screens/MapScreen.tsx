@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
+import { useRef, useCallback, useState } from "react";
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, PanResponder, Animated } from "react-native";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import { useSiteStore } from "@/store/useSiteStore";
 import { THEME, TEXT_STYLES, CARD_STYLES, LAYOUT_STYLES } from "@/components/theme";
@@ -267,6 +268,12 @@ export default function MapScreen() {
         </View>
       </View>
 
+      {/* Manual Control Room */}
+      <View style={LAYOUT_STYLES.sectionGap}>
+        <Text style={[TEXT_STYLES.label, { marginBottom: 12 }]}>MANUAL CONTROL ROOM</Text>
+        <JoystickSection />
+      </View>
+
       {/* Deployed Sensors */}
       <View style={LAYOUT_STYLES.sectionGap}>
         <View style={LAYOUT_STYLES.spaceBetween}>
@@ -319,6 +326,120 @@ export default function MapScreen() {
         </View>
       </View>
     </ScrollView>
+  );
+}
+
+function JoystickSection() {
+  const { machineryState, manualMove, manualMoveCrane, setControlMode, controlMode } = useSiteStore();
+  const [selectedMachine, setSelectedMachine] = useState<"excavator" | "crane">("excavator");
+  const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const vectorRef = useRef({ x: 0, y: 0 });
+
+  const onMove = useCallback(
+    (dx: number, dy: number) => {
+      const clampedX = Math.max(-1, Math.min(1, dx));
+      const clampedY = Math.max(-1, Math.min(1, dy));
+      vectorRef.current = { x: clampedX, y: clampedY };
+      if (selectedMachine === "excavator") {
+        manualMove(clampedX * 0.3, clampedY * 0.3);
+      } else {
+        manualMoveCrane(clampedX * 0.3, clampedY * 0.3);
+      }
+    },
+    [selectedMachine, manualMove, manualMoveCrane]
+  );
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        setControlMode("MANUAL");
+      },
+      onPanResponderMove: (_, gestureState) => {
+        const maxRadius = 60;
+        const dx = gestureState.dx;
+        const dy = gestureState.dy;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const scale = distance > maxRadius ? maxRadius / distance : 1;
+        pan.setValue({ x: dx * scale, y: dy * scale });
+        onMove(dx / maxRadius, dy / maxRadius);
+      },
+      onPanResponderRelease: () => {
+        Animated.spring(pan, { toValue: { x: 0, y: 0 }, useNativeDriver: false }).start();
+        vectorRef.current = { x: 0, y: 0 };
+      },
+    })
+  ).current;
+
+  const machinePos = selectedMachine === "excavator" ? machineryState.excavator : machineryState.crane;
+
+  return (
+    <View style={[styles.controlRoom, LAYOUT_STYLES.sectionGap]}>
+      {/* Machine Selector */}
+      <View style={LAYOUT_STYLES.spaceBetween}>
+        <View style={LAYOUT_STYLES.row}>
+          <View style={[styles.statusDot, { backgroundColor: "#000000" }]} />
+          <Text style={[TEXT_STYLES.body, { marginLeft: 8, color: THEME.fg }]}>MANUAL TELEOP ACTIVE</Text>
+        </View>
+        <View style={LAYOUT_STYLES.row}>
+          <TouchableOpacity
+            style={[styles.machineBtn, selectedMachine === "excavator" && styles.machineBtnActive]}
+            onPress={() => setSelectedMachine("excavator")}
+          >
+            <Text style={[TEXT_STYLES.caption, selectedMachine === "excavator" && { color: "#FFFFFF" }]}>EXCAVATOR</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.machineBtn, selectedMachine === "crane" && styles.machineBtnActive, { marginLeft: 8 }]}
+            onPress={() => setSelectedMachine("crane")}
+          >
+            <Text style={[TEXT_STYLES.caption, selectedMachine === "crane" && { color: "#FFFFFF" }]}>CRANE</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Telemetry */}
+      <View style={[LAYOUT_STYLES.row, { marginTop: 16 }]}>
+        <View style={[styles.telemetryBox, { marginRight: 8 }]}>
+          <Text style={TEXT_STYLES.caption}>POSITION</Text>
+          <Text style={[TEXT_STYLES.body, { color: THEME.fg, marginTop: 4 }]}>
+            X:{machinePos.x.toFixed(1)} Z:{machinePos.z.toFixed(1)}
+          </Text>
+        </View>
+        <View style={[styles.telemetryBox, { marginRight: 8 }]}>
+          <Text style={TEXT_STYLES.caption}>STATUS</Text>
+          <Text style={[TEXT_STYLES.body, { color: THEME.fg, marginTop: 4 }]}>{machinePos.status}</Text>
+        </View>
+        <View style={styles.telemetryBox}>
+          <Text style={TEXT_STYLES.caption}>VECTOR</Text>
+          <Text style={[TEXT_STYLES.body, { color: THEME.fg, marginTop: 4 }]}>
+            {vectorRef.current.x.toFixed(2)}, {vectorRef.current.y.toFixed(2)}
+          </Text>
+        </View>
+      </View>
+
+      {/* Joystick */}
+      <View style={{ alignItems: "center", marginTop: 20 }}>
+        <View style={styles.joystickPad} {...panResponder.panHandlers}>
+          <Text style={[TEXT_STYLES.caption, styles.joystickLabelN]}>N</Text>
+          <Text style={[TEXT_STYLES.caption, styles.joystickLabelS]}>S</Text>
+          <Text style={[TEXT_STYLES.caption, styles.joystickLabelW]}>W</Text>
+          <Text style={[TEXT_STYLES.caption, styles.joystickLabelE]}>E</Text>
+          <View style={styles.joystickCenterDot} />
+          <Animated.View
+            style={[
+              styles.joystickKnob,
+              {
+                transform: [{ translateX: pan.x }, { translateY: pan.y }],
+              },
+            ]}
+          />
+        </View>
+        <Text style={[TEXT_STYLES.caption, { marginTop: 12 }]}>
+          DRAG TO MOVE {selectedMachine.toUpperCase()}
+        </Text>
+      </View>
+    </View>
   );
 }
 
@@ -515,5 +636,76 @@ const styles = StyleSheet.create({
   },
   commandRow: {
     paddingVertical: 2,
+  },
+  controlRoom: {
+    borderWidth: 1,
+    borderColor: "#000000",
+    padding: 16,
+    backgroundColor: "#FFFFFF",
+  },
+  machineBtn: {
+    borderWidth: 1,
+    borderColor: THEME.cardBorder,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  machineBtnActive: {
+    backgroundColor: "#000000",
+    borderColor: "#000000",
+  },
+  telemetryBox: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: THEME.cardBorder,
+    padding: 10,
+  },
+  joystickPad: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    borderWidth: 2,
+    borderColor: "#E5E5E5",
+    backgroundColor: "#FAFAFA",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  joystickLabelN: {
+    position: "absolute",
+    top: 6,
+    fontWeight: "700",
+    color: "#999999",
+  },
+  joystickLabelS: {
+    position: "absolute",
+    bottom: 6,
+    fontWeight: "700",
+    color: "#999999",
+  },
+  joystickLabelW: {
+    position: "absolute",
+    left: 6,
+    fontWeight: "700",
+    color: "#999999",
+  },
+  joystickLabelE: {
+    position: "absolute",
+    right: 6,
+    fontWeight: "700",
+    color: "#999999",
+  },
+  joystickCenterDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#CCCCCC",
+  },
+  joystickKnob: {
+    position: "absolute",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#000000",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
   },
 });
