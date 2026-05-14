@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput } from "react-native";
 import { useState, useCallback } from "react";
 import Slider from "@react-native-community/slider";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
@@ -11,6 +11,11 @@ interface Weights {
   cost: number;
   carbon: number;
   time: number;
+}
+
+interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
 }
 
 export default function RedesignScreen() {
@@ -27,6 +32,12 @@ export default function RedesignScreen() {
   const [loading, setLoading] = useState(false);
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [weights, setWeights] = useState<Weights>({ cost: 33, carbon: 33, time: 34 });
+  const [showChat, setShowChat] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+    { role: "assistant", content: "Qwen 3.5 Engineer ready. Describe the structural issue or ask me to generate redesign options." },
+  ]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
 
   const isCritical = status === "CRITICAL";
 
@@ -107,6 +118,36 @@ export default function RedesignScreen() {
 
   const handleSelect = (id: string) => {
     setSelectedOptionId(id);
+  };
+
+  const sendChatMessage = async () => {
+    if (!chatInput.trim()) return;
+    const userMsg = chatInput.trim();
+    setChatMessages((prev) => [...prev, { role: "user", content: userMsg }]);
+    setChatInput("");
+    setChatLoading(true);
+    try {
+      const res = await api.chat({
+        messages: [...chatMessages, { role: "user", content: userMsg }].map((m) => ({ role: m.role, content: m.content })),
+        deviation_mm: deviation,
+        soil_bearing_capacity: soilBearingCapacity,
+        safety_factor: 1.5,
+        weights,
+      });
+      setChatMessages((prev) => [...prev, { role: "assistant", content: res.reply }]);
+      if (res.parsed_options && res.parsed_options.length > 0) {
+        setOptions(res.parsed_options);
+        setSelectedOptionId(res.parsed_options[0]?.id ?? null);
+        pushEvent("RECALIBRATE", "info", "AI Generated New Options", "Chat-based redesign options received.");
+      }
+    } catch {
+      setChatMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Sorry, the AI backend is currently unreachable. Please try again later." },
+      ]);
+    } finally {
+      setChatLoading(false);
+    }
   };
 
   const handleExecute = () => {
@@ -264,6 +305,58 @@ export default function RedesignScreen() {
         </Text>
       </TouchableOpacity>
 
+      {/* AI Chat Toggle */}
+      <TouchableOpacity
+        style={[styles.chatToggleBtn, { marginTop: 16 }]}
+        onPress={() => setShowChat(!showChat)}
+      >
+        <MaterialIcons name={showChat ? "close" : "chat"} size={16} color={showChat ? "#FFFFFF" : "#000000"} />
+        <Text style={[TEXT_STYLES.button, { marginLeft: 8, color: showChat ? "#FFFFFF" : "#000000" }]}>
+          {showChat ? "CLOSE AI CHAT" : "OPEN AI CHAT"}
+        </Text>
+      </TouchableOpacity>
+
+      {/* AI Chat Panel */}
+      {showChat && (
+        <View style={[CARD_STYLES.card, { marginTop: 16 }]}>
+          <Text style={[TEXT_STYLES.label, { marginBottom: 12 }]}>QWEN 3.5 ENGINEER</Text>
+          <View style={{ maxHeight: 240 }}>
+            {chatMessages.map((msg, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.chatBubble,
+                  msg.role === "user" ? styles.chatBubbleUser : styles.chatBubbleAssistant,
+                ]}
+              >
+                <Text style={[TEXT_STYLES.caption, { fontWeight: "700", marginBottom: 2 }]}>
+                  {msg.role === "user" ? "YOU" : "AI"}
+                </Text>
+                <Text style={TEXT_STYLES.body}>{msg.content}</Text>
+              </View>
+            ))}
+            {chatLoading && (
+              <View style={styles.chatBubble}>
+                <ActivityIndicator size="small" color="#000000" />
+              </View>
+            )}
+          </View>
+          <View style={[LAYOUT_STYLES.row, { marginTop: 12 }]}>
+            <TextInput
+              style={styles.chatInput}
+              value={chatInput}
+              onChangeText={setChatInput}
+              placeholder="Ask the AI engineer..."
+              placeholderTextColor="#999999"
+              onSubmitEditing={sendChatMessage}
+            />
+            <TouchableOpacity style={styles.chatSendBtn} onPress={sendChatMessage}>
+              <MaterialIcons name="send" size={16} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       {/* Hash / Timestamp */}
       <Text style={[TEXT_STYLES.caption, { textAlign: "center", marginTop: 16 }]}>
         SHA256: 8F434346648F6B96DF89DDA901C5176B10A6D839610D3C1AC88B
@@ -313,5 +406,43 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     marginTop: 8,
     marginBottom: 12,
+  },
+  chatToggleBtn: {
+    borderWidth: 1,
+    borderColor: THEME.fg,
+    paddingVertical: 14,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+  },
+  chatBubble: {
+    padding: 10,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: THEME.cardBorder,
+  },
+  chatBubbleUser: {
+    backgroundColor: "#FAFAFA",
+    marginLeft: 20,
+  },
+  chatBubbleAssistant: {
+    backgroundColor: "#FFFFFF",
+    marginRight: 20,
+  },
+  chatInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: THEME.cardBorder,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 13,
+    color: "#000000",
+  },
+  chatSendBtn: {
+    backgroundColor: "#000000",
+    padding: 12,
+    marginLeft: 8,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
