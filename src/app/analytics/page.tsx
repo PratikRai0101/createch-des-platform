@@ -24,9 +24,15 @@ export default function AnalyticsPage() {
   const costSavings = aiOptimized ? "₹1.42 Cr" : anomalyDetected ? "₹0.86 Cr" : "₹1.10 Cr";
   const reworkReduction = aiOptimized ? "94%" : anomalyDetected ? "62%" : "81%";
 
+  const toISTString = (date: Date = new Date()) => {
+    const offsetMs = 5.5 * 60 * 60 * 1000;
+    const istDate = new Date(date.getTime() + offsetMs);
+    return istDate.toISOString();
+  };
+
   const exportAuditTrail = () => {
     const payload = {
-      exported_at: new Date().toISOString(),
+      exported_at: toISTString(),
       scenario_state: aiOptimized ? "IMPACT" : anomalyDetected ? "RECALIBRATE" : "SENSE/DETECT",
       total_events: scenarioEvents.length,
       events: scenarioEvents,
@@ -36,7 +42,7 @@ export default function AnalyticsPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `des-audit-trail-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.json`;
+    link.download = `des-audit-trail-${toISTString().slice(0, 19).replace(/[:T]/g, "-")}.json`;
     link.click();
     URL.revokeObjectURL(url);
   };

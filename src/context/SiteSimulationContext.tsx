@@ -111,7 +111,13 @@ const createInitialCostHistory = (): CostHistoryItem[] =>
     actual: item.projected,
   }));
 
-const stamp = () => new Date().toISOString().substring(11, 19);
+function toIST(date: Date = new Date()): string {
+  const offsetMs = 5.5 * 60 * 60 * 1000; // IST = UTC+5:30
+  const istDate = new Date(date.getTime() + offsetMs);
+  return istDate.toISOString().substring(11, 19);
+}
+
+const stamp = () => toIST();
 const API_BASE_URL = process.env.NEXT_PUBLIC_AI_API_BASE_URL ?? "http://127.0.0.1:8000";
 
 interface PipelineEvent {
