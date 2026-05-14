@@ -1,7 +1,10 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
+import { LineChart, BarChart } from "react-native-chart-kit";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import { useSiteStore } from "@/store/useSiteStore";
 import { THEME, TEXT_STYLES, CARD_STYLES, LAYOUT_STYLES } from "@/components/theme";
+
+const SCREEN_WIDTH = Dimensions.get("window").width - 48;
 
 const PIPELINE_STAGES = ["Sense", "Detect", "Redesign", "Execute", "Audit"];
 
@@ -20,6 +23,10 @@ export default function DashboardScreen() {
     triggerGenerativeRedesign,
     resetSimulation,
     injectDisaster,
+    deviationHistory,
+    recalibrationCount,
+    totalReworkSaved,
+    totalScheduleImpact,
   } = useSiteStore();
 
   const isCritical = status === "CRITICAL";
@@ -121,6 +128,89 @@ export default function DashboardScreen() {
             {currentScheduleImpact > 0 ? `+${Math.round(currentScheduleImpact)}` : "-4"} DAYS
           </Text>
         </View>
+      </View>
+
+      {/* Analytics KPIs */}
+      <View style={LAYOUT_STYLES.sectionGap}>
+        <Text style={[TEXT_STYLES.label, { marginBottom: 12 }]}>BUSINESS ANALYTICS</Text>
+        <View style={LAYOUT_STYLES.gridRow}>
+          <View style={CARD_STYLES.gridItem}>
+            <Text style={[TEXT_STYLES.label, { marginBottom: 8 }]}>RECALIBRATIONS</Text>
+            <Text style={TEXT_STYLES.smallValue}>{recalibrationCount}</Text>
+          </View>
+          <View style={CARD_STYLES.gridItem}>
+            <Text style={[TEXT_STYLES.label, { marginBottom: 8 }]}>REWORK SAVED</Text>
+            <Text style={TEXT_STYLES.smallValue}>₹{totalReworkSaved.toLocaleString()}</Text>
+          </View>
+        </View>
+        <View style={LAYOUT_STYLES.gridRow}>
+          <View style={CARD_STYLES.gridItem}>
+            <Text style={[TEXT_STYLES.label, { marginBottom: 8 }]}>SCHED IMPACT</Text>
+            <Text style={TEXT_STYLES.smallValue}>{totalScheduleImpact.toFixed(1)}d</Text>
+          </View>
+          <View style={CARD_STYLES.gridItem}>
+            <Text style={[TEXT_STYLES.label, { marginBottom: 8 }]}>CARBON SAVED</Text>
+            <Text style={TEXT_STYLES.smallValue}>190 TONS</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Deviation History Chart */}
+      <View style={[CARD_STYLES.card, LAYOUT_STYLES.sectionGap]}>
+        <Text style={[TEXT_STYLES.label, { marginBottom: 12 }]}>DEVIATION TIMELINE (MM)</Text>
+        <LineChart
+          data={{
+            labels: deviationHistory.map((d) => d.time),
+            datasets: [
+              { data: deviationHistory.map((d) => d.dev), color: () => "#000000", strokeWidth: 2 },
+              { data: deviationHistory.map((d) => d.safe), color: () => "#999999", strokeWidth: 1 },
+            ],
+          }}
+          width={SCREEN_WIDTH}
+          height={180}
+          chartConfig={{
+            backgroundColor: "#FFFFFF",
+            backgroundGradientFrom: "#FFFFFF",
+            backgroundGradientTo: "#FFFFFF",
+            decimalPlaces: 1,
+            color: () => "#000000",
+            labelColor: () => "#666666",
+            style: { borderRadius: 0 },
+            propsForDots: { r: "3", strokeWidth: "1", stroke: "#000000" },
+          }}
+          bezier
+          style={{ marginVertical: 8 }}
+          withInnerLines={false}
+          withOuterLines={true}
+        />
+      </View>
+
+      {/* Cost Trajectory Chart */}
+      <View style={[CARD_STYLES.card, LAYOUT_STYLES.sectionGap]}>
+        <Text style={[TEXT_STYLES.label, { marginBottom: 12 }]}>CUMULATIVE COST TRAJECTORY (₹ LAKHS)</Text>
+        <BarChart
+          data={{
+            labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+            datasets: [
+              { data: [400, 450, 500, 550, 600, 650] },
+              { data: [380, 410, 420, 440, 450, 460] },
+            ],
+          }}
+          width={SCREEN_WIDTH}
+          height={180}
+          chartConfig={{
+            backgroundColor: "#FFFFFF",
+            backgroundGradientFrom: "#FFFFFF",
+            backgroundGradientTo: "#FFFFFF",
+            decimalPlaces: 0,
+            color: (opacity = 1) => `rgba(0,0,0,${opacity})`,
+            labelColor: () => "#666666",
+            style: { borderRadius: 0 },
+          }}
+          style={{ marginVertical: 8 }}
+          withInnerLines={false}
+          showValuesOnTopOfBars
+        />
       </View>
 
       {/* Simulation Controls */}
