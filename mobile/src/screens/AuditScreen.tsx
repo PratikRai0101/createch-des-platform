@@ -1,5 +1,7 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { useState } from "react";
+import * as FileSystem from "expo-file-system";
+import * as Sharing from "expo-sharing";
 import { useSiteStore } from "@/store/useSiteStore";
 import { THEME, TEXT_STYLES, CARD_STYLES, LAYOUT_STYLES } from "@/components/theme";
 import type { EventSeverity, ScenarioEvent } from "@/types";
@@ -35,8 +37,26 @@ function severityDotColor(sev: EventSeverity): string {
 }
 
 export default function AuditScreen() {
-  const { scenarioEvents } = useSiteStore();
+  const { scenarioEvents, aiOptimized, anomalyDetected } = useSiteStore();
   const [activeTab, setActiveTab] = useState<FilterTab>("ALL");
+
+  const exportAuditTrail = async () => {
+    try {
+      const payload = {
+        exported_at: new Date().toISOString(),
+        scenario_state: aiOptimized ? "IMPACT" : anomalyDetected ? "RECALIBRATE" : "SENSE/DETECT",
+        total_events: scenarioEvents.length,
+        events: scenarioEvents,
+      };
+      const json = JSON.stringify(payload, null, 2);
+      const filename = `des-audit-trail-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.json`;
+      const fileUri = FileSystem.cacheDirectory + filename;
+      await FileSystem.writeAsStringAsync(fileUri, json);
+      await Sharing.shareAsync(fileUri);
+    } catch {
+      Alert.alert("Export Failed", "Unable to write or share the audit trail.");
+    }
+  };
 
   const filteredEvents = scenarioEvents.filter((evt) => {
     if (activeTab === "ALL") return true;
@@ -50,10 +70,17 @@ export default function AuditScreen() {
 
   return (
     <View style={LAYOUT_STYLES.screen}>
-      <Text style={[TEXT_STYLES.title, { marginTop: 16, marginBottom: 8 }]}>AUDIT TRAIL</Text>
-      <Text style={[TEXT_STYLES.body, { marginBottom: 20 }]}>
-        Immutable event log and execution history.
-      </Text>
+      <View style={LAYOUT_STYLES.spaceBetween}>
+        <View>
+          <Text style={[TEXT_STYLES.title, { marginTop: 16, marginBottom: 8 }]}>AUDIT TRAIL</Text>
+          <Text style={[TEXT_STYLES.body, { marginBottom: 20 }]}>
+            Immutable event log and execution history.
+          </Text>
+        </View>
+        <TouchableOpacity style={styles.exportBtn} onPress={exportAuditTrail}>
+          <Text style={TEXT_STYLES.caption}>EXPORT</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Filter Tabs */}
       <View style={styles.tabRow}>
@@ -175,5 +202,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     marginLeft: 8,
+  },
+  exportBtn: {
+    borderWidth: 1,
+    borderColor: THEME.fg,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    alignSelf: "flex-start",
+    marginTop: 16,
   },
 });
