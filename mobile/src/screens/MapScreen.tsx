@@ -1,6 +1,36 @@
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
+import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import { useSiteStore } from "@/store/useSiteStore";
 import { THEME, TEXT_STYLES, CARD_STYLES, LAYOUT_STYLES } from "@/components/theme";
+import type { SensorNode } from "@/types";
+
+const SENSOR_NODES: SensorNode[] = [
+  { id: "S-7A01", type: "Geotech", status: "online", battery: 94 },
+  { id: "S-7A02", type: "Geotech", status: "online", battery: 91 },
+  { id: "L-2B14", type: "Laser Scan", status: "degraded", battery: 45 },
+  { id: "L-2B15", type: "Laser Scan", status: "online", battery: 88 },
+  { id: "M-9C22", type: "Material", status: "offline", battery: 0 },
+  { id: "M-9C23", type: "Material", status: "online", battery: 99 },
+  { id: "V-1A05", type: "Vibration", status: "online", battery: 76 },
+  { id: "V-1A06", type: "Vibration", status: "online", battery: 74 },
+  { id: "C-4D12", type: "CCTV", status: "online", battery: 100 },
+  { id: "C-4D13", type: "CCTV", status: "online", battery: 100 },
+];
+
+function SensorStatusIcon({ status }: { status: SensorNode["status"] }) {
+  if (status === "online") return <MaterialIcons name="wifi" size={16} color="#000000" />;
+  if (status === "degraded") return <MaterialIcons name="error-outline" size={16} color="#000000" />;
+  return <MaterialIcons name="wifi-off" size={16} color="#CC0000" />;
+}
+
+function BatteryBar({ battery }: { battery: number }) {
+  const color = battery > 50 ? "#000000" : battery > 20 ? "#000000" : "#CC0000";
+  return (
+    <View style={styles.batteryTrack}>
+      <View style={[styles.batteryFill, { width: `${battery}%`, backgroundColor: color }]} />
+    </View>
+  );
+}
 
 export default function MapScreen() {
   const { machineryState } = useSiteStore();
@@ -152,6 +182,58 @@ export default function MapScreen() {
           <Text style={TEXT_STYLES.caption}>STATUS: {machineryState.crane.status}</Text>
         </View>
       </View>
+
+      {/* Deployed Sensors */}
+      <View style={LAYOUT_STYLES.sectionGap}>
+        <View style={LAYOUT_STYLES.spaceBetween}>
+          <Text style={[TEXT_STYLES.label, { marginBottom: 12 }]}>DEPLOYED SENSORS (ZONE 4)</Text>
+          <Text style={TEXT_STYLES.caption}>1,244 ACTIVE NODES</Text>
+        </View>
+
+        <View style={LAYOUT_STYLES.row}>
+          <View style={LAYOUT_STYLES.row}>
+            <View style={[styles.statusDot, { backgroundColor: "#000000" }]} />
+            <Text style={[TEXT_STYLES.caption, { marginLeft: 4 }]}>ONLINE (1,244)</Text>
+          </View>
+          <View style={[LAYOUT_STYLES.row, { marginLeft: 12 }]}>
+            <View style={[styles.statusDot, { backgroundColor: "#000000" }]} />
+            <Text style={[TEXT_STYLES.caption, { marginLeft: 4 }]}>DEGRADED (12)</Text>
+          </View>
+          <View style={[LAYOUT_STYLES.row, { marginLeft: 12 }]}>
+            <View style={[styles.statusDot, { backgroundColor: "#CC0000" }]} />
+            <Text style={[TEXT_STYLES.caption, { marginLeft: 4 }]}>OFFLINE (3)</Text>
+          </View>
+        </View>
+
+        <View style={styles.sensorGrid}>
+          {SENSOR_NODES.map((node) => (
+            <View key={node.id} style={styles.sensorCard}>
+              <View
+                style={[
+                  styles.sensorCardInner,
+                  node.status === "degraded" && styles.sensorCardDegraded,
+                  node.status === "offline" && styles.sensorCardOffline,
+                ]}
+              >
+                <View style={LAYOUT_STYLES.spaceBetween}>
+                  <View>
+                    <Text style={[TEXT_STYLES.title, { fontSize: 14 }]}>{node.id}</Text>
+                    <Text style={[TEXT_STYLES.caption, { marginTop: 2 }]}>{node.type.toUpperCase()} NODE</Text>
+                  </View>
+                  <SensorStatusIcon status={node.status} />
+                </View>
+
+                <View style={[LAYOUT_STYLES.divider, { marginTop: 10 }]} />
+
+                <View style={LAYOUT_STYLES.spaceBetween}>
+                  <Text style={TEXT_STYLES.caption}>BATT: {node.battery}%</Text>
+                  <BatteryBar battery={node.battery} />
+                </View>
+              </View>
+            </View>
+          ))}
+        </View>
+      </View>
     </ScrollView>
   );
 }
@@ -277,5 +359,42 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: "center",
     marginTop: 16,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  sensorGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 12,
+    marginHorizontal: -4,
+  },
+  sensorCard: {
+    width: "50%",
+    padding: 4,
+  },
+  sensorCardInner: {
+    borderWidth: 1,
+    borderColor: THEME.cardBorder,
+    padding: 12,
+    backgroundColor: THEME.bg,
+  },
+  sensorCardDegraded: {
+    borderColor: "#000000",
+    backgroundColor: "#FAFAFA",
+  },
+  sensorCardOffline: {
+    borderColor: "#CC0000",
+    backgroundColor: "#FFF5F5",
+  },
+  batteryTrack: {
+    width: 32,
+    height: 3,
+    backgroundColor: "#E5E5E5",
+  },
+  batteryFill: {
+    height: 3,
   },
 });
