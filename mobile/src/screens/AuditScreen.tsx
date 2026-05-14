@@ -50,11 +50,16 @@ export default function AuditScreen() {
       };
       const json = JSON.stringify(payload, null, 2);
       const filename = `des-audit-trail-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.json`;
-      const fileUri = FileSystem.cacheDirectory + filename;
-      await FileSystem.writeAsStringAsync(fileUri, json);
-      await Sharing.shareAsync(fileUri);
-    } catch {
-      Alert.alert("Export Failed", "Unable to write or share the audit trail.");
+      const dir = FileSystem.cacheDirectory ?? "";
+      const fileUri = dir + filename;
+      await FileSystem.writeAsStringAsync(fileUri, json, { encoding: FileSystem.EncodingType.UTF8 });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(fileUri);
+      } else {
+        Alert.alert("Export Ready", `File saved to cache: ${filename}`);
+      }
+    } catch (err) {
+      Alert.alert("Export Failed", String(err));
     }
   };
 
@@ -116,7 +121,7 @@ export default function AuditScreen() {
             {/* Event Card */}
             <View style={styles.eventCard}>
               <Text style={[TEXT_STYLES.caption, { color: severityColor(evt.severity), marginBottom: 6 }]}>
-                2023.10.24 :: {evt.ts}
+                {new Date().toISOString().slice(0, 10).replace(/-/g, ".")} :: {evt.ts}
               </Text>
 
               <View style={[LAYOUT_STYLES.row, { marginBottom: 6 }]}>
@@ -149,7 +154,7 @@ export default function AuditScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    paddingBottom: 32,
+    paddingBottom: 100,
   },
   tabRow: {
     flexDirection: "row",

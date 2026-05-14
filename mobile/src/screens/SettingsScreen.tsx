@@ -152,7 +152,7 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    paddingBottom: 32,
+    paddingBottom: 100,
   },
   statusDot: {
     width: 8,

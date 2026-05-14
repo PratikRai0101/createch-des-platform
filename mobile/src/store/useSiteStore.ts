@@ -88,10 +88,10 @@ export const useSiteStore = create<SiteState>((set, get) => ({
   currentEstimatedCost: 0,
   currentScheduleImpact: 0,
 
-  scenarioEvents: [
+    scenarioEvents: [
     {
       id: "evt-init",
-      ts: "--:--:--",
+      ts: stamp(),
       stage: "SENSE",
       severity: "info",
       title: "Scenario Engine Ready",

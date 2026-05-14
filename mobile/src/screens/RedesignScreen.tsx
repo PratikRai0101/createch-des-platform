@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform, Keyboard } from "react-native";
 import { useState, useCallback } from "react";
 import Slider from "@react-native-community/slider";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
@@ -318,43 +318,53 @@ export default function RedesignScreen() {
 
       {/* AI Chat Panel */}
       {showChat && (
-        <View style={[CARD_STYLES.card, { marginTop: 16 }]}>
-          <Text style={[TEXT_STYLES.label, { marginBottom: 12 }]}>QWEN 3.5 ENGINEER</Text>
-          <View style={{ maxHeight: 240 }}>
-            {chatMessages.map((msg, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.chatBubble,
-                  msg.role === "user" ? styles.chatBubbleUser : styles.chatBubbleAssistant,
-                ]}
-              >
-                <Text style={[TEXT_STYLES.caption, { fontWeight: "700", marginBottom: 2 }]}>
-                  {msg.role === "user" ? "YOU" : "AI"}
-                </Text>
-                <Text style={TEXT_STYLES.body}>{msg.content}</Text>
-              </View>
-            ))}
-            {chatLoading && (
-              <View style={styles.chatBubble}>
-                <ActivityIndicator size="small" color="#000000" />
-              </View>
-            )}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ marginTop: 16 }}
+        >
+          <View style={[CARD_STYLES.card]}>
+            <Text style={[TEXT_STYLES.label, { marginBottom: 12 }]}>QWEN 3.5 ENGINEER</Text>
+            <ScrollView
+              style={{ maxHeight: 240 }}
+              ref={(ref) => { if (ref) { setTimeout(() => ref.scrollToEnd({ animated: true }), 100); }}}
+              keyboardShouldPersistTaps="handled"
+            >
+              {chatMessages.map((msg, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.chatBubble,
+                    msg.role === "user" ? styles.chatBubbleUser : styles.chatBubbleAssistant,
+                  ]}
+                >
+                  <Text style={[TEXT_STYLES.caption, { fontWeight: "700", marginBottom: 2 }]}>
+                    {msg.role === "user" ? "YOU" : "AI"}
+                  </Text>
+                  <Text style={TEXT_STYLES.body}>{msg.content}</Text>
+                </View>
+              ))}
+              {chatLoading && (
+                <View style={styles.chatBubble}>
+                  <ActivityIndicator size="small" color="#000000" />
+                </View>
+              )}
+            </ScrollView>
+            <View style={[LAYOUT_STYLES.row, { marginTop: 12 }]}>
+              <TextInput
+                style={styles.chatInput}
+                value={chatInput}
+                onChangeText={setChatInput}
+                placeholder="Ask the AI engineer..."
+                placeholderTextColor="#999999"
+                onSubmitEditing={sendChatMessage}
+                blurOnSubmit={false}
+              />
+              <TouchableOpacity style={styles.chatSendBtn} onPress={sendChatMessage}>
+                <MaterialIcons name="send" size={16} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
           </View>
-          <View style={[LAYOUT_STYLES.row, { marginTop: 12 }]}>
-            <TextInput
-              style={styles.chatInput}
-              value={chatInput}
-              onChangeText={setChatInput}
-              placeholder="Ask the AI engineer..."
-              placeholderTextColor="#999999"
-              onSubmitEditing={sendChatMessage}
-            />
-            <TouchableOpacity style={styles.chatSendBtn} onPress={sendChatMessage}>
-              <MaterialIcons name="send" size={16} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
-        </View>
+        </KeyboardAvoidingView>
       )}
 
       {/* Hash / Timestamp */}
@@ -371,7 +381,7 @@ export default function RedesignScreen() {
 const styles = StyleSheet.create({
   content: {
     paddingTop: 16,
-    paddingBottom: 32,
+    paddingBottom: 100,
   },
   analyzeBtn: {
     backgroundColor: THEME.fg,

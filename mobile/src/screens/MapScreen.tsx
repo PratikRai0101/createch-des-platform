@@ -84,11 +84,25 @@ export default function MapScreen() {
             </View>
           </View>
 
-          {/* EXC-1 */}
-          <View style={styles.excavatorMarker}>
+          {/* EXC-1 - Dynamic position from joystick */}
+          <View style={[styles.excavatorMarker, {
+            left: 80 + (machineryState.excavator.x * 3),
+            bottom: 60 + (machineryState.excavator.z * 3),
+          }]}>
             <View style={styles.excavatorSquare} />
             <View style={styles.excavatorLabel}>
               <Text style={TEXT_STYLES.caption}>EXC-1</Text>
+            </View>
+          </View>
+
+          {/* CRN-2 - Dynamic position */}
+          <View style={[styles.craneMarker, {
+            right: 80 - (machineryState.crane.x * 2),
+            top: 90 + (machineryState.crane.z * 2),
+          }]}>
+            <View style={styles.craneSquare} />
+            <View style={styles.craneLabel}>
+              <Text style={TEXT_STYLES.caption}>CRN-2</Text>
             </View>
           </View>
         </View>
@@ -211,12 +225,13 @@ export default function MapScreen() {
           <View style={styles.terminalBody}>
             {MOCK_LOGS.map((log, i) => (
               <View key={i} style={styles.terminalRow}>
-                <Text style={[TEXT_STYLES.caption, { color: "#666666", width: 90 }]}>[{log.ts}]</Text>
+                <Text style={[TEXT_STYLES.caption, { color: "#666666", width: 100, flexShrink: 0 }]} numberOfLines={1}>[{log.ts}]</Text>
                 <Text
                   style={[
                     TEXT_STYLES.caption,
                     {
-                      width: 50,
+                      width: 44,
+                      flexShrink: 0,
                       color:
                         log.level === "INFO"
                           ? "#000000"
@@ -228,10 +243,11 @@ export default function MapScreen() {
                       fontWeight: "700",
                     },
                   ]}
+                  numberOfLines={1}
                 >
                   {log.level}
                 </Text>
-                <Text style={[TEXT_STYLES.caption, { flex: 1, color: "#333333" }]}>{log.msg}</Text>
+                <Text style={[TEXT_STYLES.caption, { flex: 1, color: "#333333" }]} numberOfLines={1}>{log.msg}</Text>
               </View>
             ))}
           </View>
@@ -330,16 +346,16 @@ export default function MapScreen() {
 }
 
 function JoystickSection() {
-  const { machineryState, manualMove, manualMoveCrane, setControlMode, controlMode } = useSiteStore();
+  const { machineryState, manualMove, manualMoveCrane, setControlMode } = useSiteStore();
   const [selectedMachine, setSelectedMachine] = useState<"excavator" | "crane">("excavator");
+  const [vector, setVector] = useState({ x: 0, y: 0 });
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
-  const vectorRef = useRef({ x: 0, y: 0 });
 
   const onMove = useCallback(
     (dx: number, dy: number) => {
       const clampedX = Math.max(-1, Math.min(1, dx));
       const clampedY = Math.max(-1, Math.min(1, dy));
-      vectorRef.current = { x: clampedX, y: clampedY };
+      setVector({ x: clampedX, y: clampedY });
       if (selectedMachine === "excavator") {
         manualMove(clampedX * 0.3, clampedY * 0.3);
       } else {
@@ -367,7 +383,7 @@ function JoystickSection() {
       },
       onPanResponderRelease: () => {
         Animated.spring(pan, { toValue: { x: 0, y: 0 }, useNativeDriver: false }).start();
-        vectorRef.current = { x: 0, y: 0 };
+        setVector({ x: 0, y: 0 });
       },
     })
   ).current;
@@ -413,7 +429,7 @@ function JoystickSection() {
         <View style={styles.telemetryBox}>
           <Text style={TEXT_STYLES.caption}>VECTOR</Text>
           <Text style={[TEXT_STYLES.body, { color: THEME.fg, marginTop: 4 }]}>
-            {vectorRef.current.x.toFixed(2)}, {vectorRef.current.y.toFixed(2)}
+            {vector.x.toFixed(2)}, {vector.y.toFixed(2)}
           </Text>
         </View>
       </View>
@@ -446,7 +462,7 @@ function JoystickSection() {
 const styles = StyleSheet.create({
   content: {
     paddingTop: 16,
-    paddingBottom: 32,
+    paddingBottom: 100,
   },
   metaTag: {
     borderWidth: 1,
@@ -628,6 +644,7 @@ const styles = StyleSheet.create({
   terminalRow: {
     flexDirection: "row",
     marginBottom: 4,
+    flexWrap: "nowrap",
   },
   commandBlock: {
     padding: 12,

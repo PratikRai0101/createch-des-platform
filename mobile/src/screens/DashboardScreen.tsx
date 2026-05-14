@@ -253,7 +253,7 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   content: {
     paddingTop: 16,
-    paddingBottom: 32,
+    paddingBottom: 100,
   },
   pipelineContainer: {
     flexDirection: "row",
