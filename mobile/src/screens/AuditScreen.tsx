@@ -36,6 +36,12 @@ function severityDotColor(sev: EventSeverity): string {
   }
 }
 
+function toISTDate(date: Date = new Date()): string {
+  const offsetMs = 5.5 * 60 * 60 * 1000;
+  const istDate = new Date(date.getTime() + offsetMs);
+  return istDate.toISOString().slice(0, 10).replace(/-/g, ".");
+}
+
 export default function AuditScreen() {
   const { scenarioEvents, aiOptimized, anomalyDetected } = useSiteStore();
   const [activeTab, setActiveTab] = useState<FilterTab>("ALL");
@@ -121,7 +127,7 @@ export default function AuditScreen() {
             {/* Event Card */}
             <View style={styles.eventCard}>
               <Text style={[TEXT_STYLES.caption, { color: severityColor(evt.severity), marginBottom: 6 }]}>
-                {new Date().toISOString().slice(0, 10).replace(/-/g, ".")} :: {evt.ts}
+                {toISTDate()} :: {evt.ts}
               </Text>
 
               <View style={[LAYOUT_STYLES.row, { marginBottom: 6 }]}>

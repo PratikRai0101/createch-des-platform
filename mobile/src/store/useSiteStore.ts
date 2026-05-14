@@ -62,7 +62,19 @@ interface SiteState {
   manualMoveCrane: (deltaX: number, deltaZ: number) => void;
 }
 
-const stamp = () => new Date().toISOString().substring(11, 19);
+function toIST(date: Date = new Date()): string {
+  const offsetMs = 5.5 * 60 * 60 * 1000; // IST = UTC+5:30
+  const istDate = new Date(date.getTime() + offsetMs);
+  return istDate.toISOString().substring(11, 19);
+}
+
+function toISTDate(date: Date = new Date()): string {
+  const offsetMs = 5.5 * 60 * 60 * 1000;
+  const istDate = new Date(date.getTime() + offsetMs);
+  return istDate.toISOString().slice(0, 10).replace(/-/g, ".");
+}
+
+const stamp = () => toIST();
 
 const createInitialHistory = () =>
   Array.from({ length: SIMULATION.HISTORY_SIZE }).map((_, i) => ({
