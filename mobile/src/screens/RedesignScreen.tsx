@@ -1,10 +1,17 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import Slider from "@react-native-community/slider";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import { useSiteStore } from "@/store/useSiteStore";
 import { api } from "@/api/client";
 import { THEME, TEXT_STYLES, CARD_STYLES, LAYOUT_STYLES } from "@/components/theme";
 import type { Option } from "@/types";
+
+interface Weights {
+  cost: number;
+  carbon: number;
+  time: number;
+}
 
 export default function RedesignScreen() {
   const {
@@ -19,8 +26,29 @@ export default function RedesignScreen() {
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [analysisComplete, setAnalysisComplete] = useState(false);
+  const [weights, setWeights] = useState<Weights>({ cost: 33, carbon: 33, time: 34 });
 
   const isCritical = status === "CRITICAL";
+
+  const updateWeight = useCallback((key: keyof Weights, value: number) => {
+    setWeights((prev) => {
+      const clamped = Math.max(0, Math.min(100, Math.round(value)));
+      const diff = clamped - prev[key];
+      const others = (Object.keys(prev) as (keyof Weights)[]).filter((k) => k !== key);
+      const totalOther = others.reduce((sum, k) => sum + prev[k], 0);
+      if (totalOther === 0) {
+        const even = Math.round(100 / others.length);
+        return { ...prev, [key]: clamped, ...Object.fromEntries(others.map((k) => [k, even])) } as Weights;
+      }
+      const newW = { ...prev, [key]: clamped } as Weights;
+      others.forEach((k) => {
+        newW[k] = Math.max(0, Math.round(prev[k] - (prev[k] / totalOther) * diff));
+      });
+      const sum = Object.values(newW).reduce((a, b) => a + b, 0);
+      if (sum !== 100) newW[others[others.length - 1]] += 100 - sum;
+      return newW;
+    });
+  }, []);
 
   const runAnalysis = async () => {
     setLoading(true);
@@ -29,7 +57,7 @@ export default function RedesignScreen() {
         soil_bearing_capacity: soilBearingCapacity,
         deviation_mm: deviation,
         safety_factor: 1.5,
-        weights: { cost: 33, carbon: 33, time: 34 },
+        weights,
       });
       setOptions(res.options);
       setSelectedOptionId(res.recommended_option_id);
@@ -90,13 +118,46 @@ export default function RedesignScreen() {
     }
   };
 
+  const TradeoffWeights = () => (
+    <View style={[CARD_STYLES.card, { marginBottom: 16, padding: 16 }]}>
+      <Text style={[TEXT_STYLES.label, { marginBottom: 16 }]}>TRADEOFF WEIGHTS</Text>
+      {(["cost", "carbon", "time"] as const).map((key) => (
+        <View key={key} style={{ marginBottom: 16 }}>
+          <View style={LAYOUT_STYLES.spaceBetween}>
+            <Text style={TEXT_STYLES.body}>{key.toUpperCase()}</Text>
+            <Text style={[TEXT_STYLES.body, { fontWeight: "700" }]}>{weights[key]}%</Text>
+          </View>
+          <Slider
+            style={{ width: "100%", height: 24, marginTop: 8 }}
+            minimumValue={0}
+            maximumValue={100}
+            step={1}
+            value={weights[key]}
+            onValueChange={(v) => updateWeight(key, v)}
+            minimumTrackTintColor="#000000"
+            maximumTrackTintColor="#E5E5E5"
+            thumbTintColor="#000000"
+          />
+        </View>
+      ))}
+      <View style={LAYOUT_STYLES.divider} />
+      <View style={LAYOUT_STYLES.spaceBetween}>
+        <Text style={TEXT_STYLES.caption}>TOTAL</Text>
+        <Text style={[TEXT_STYLES.caption, { fontWeight: "700" }]}>
+          {weights.cost + weights.carbon + weights.time}%
+        </Text>
+      </View>
+    </View>
+  );
+
   if (!analysisComplete) {
     return (
-      <View style={[LAYOUT_STYLES.screen, { justifyContent: "center", alignItems: "center" }]}>
-        <Text style={[TEXT_STYLES.label, { marginBottom: 20 }]}>GENERATIVE DESIGN ENGINE</Text>
-        <Text style={[TEXT_STYLES.body, { textAlign: "center", marginBottom: 24, maxWidth: 280 }]}>
+      <ScrollView style={LAYOUT_STYLES.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Text style={[TEXT_STYLES.label, { marginTop: 16, marginBottom: 8 }]}>GENERATIVE DESIGN ENGINE</Text>
+        <Text style={[TEXT_STYLES.body, { marginBottom: 20 }]}>
           Run structural analysis to generate AI-optimized redesign options based on current site telemetry.
         </Text>
+        <TradeoffWeights />
         <TouchableOpacity style={styles.analyzeBtn} onPress={runAnalysis} disabled={loading}>
           {loading ? (
             <ActivityIndicator color={THEME.bg} />
@@ -109,7 +170,7 @@ export default function RedesignScreen() {
             No critical deficit detected. Analysis will use current baseline.
           </Text>
         )}
-      </View>
+      </ScrollView>
     );
   }
 
@@ -129,6 +190,8 @@ export default function RedesignScreen() {
       <Text style={[TEXT_STYLES.body, { marginBottom: 20 }]}>
         Load-bearing capacity on Zone 4, Pillar B-12 falls below safety tolerance margins due to unexpected substrate settling. AI redesign options generated below to restore structural integrity.
       </Text>
+
+      <TradeoffWeights />
 
       {/* Options */}
       {options.map((opt, index) => {
