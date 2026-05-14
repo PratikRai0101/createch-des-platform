@@ -3,6 +3,7 @@ import { LineChart, BarChart } from "react-native-chart-kit";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import { useSiteStore } from "@/store/useSiteStore";
 import { THEME, TEXT_STYLES, CARD_STYLES, LAYOUT_STYLES } from "@/components/theme";
+import DigitalTwinPreview from "@/components/DigitalTwinPreview";
 
 const SCREEN_WIDTH = Dimensions.get("window").width - 48;
 
@@ -71,6 +72,12 @@ export default function DashboardScreen() {
           <Text style={TEXT_STYLES.body}>All parameters within tolerance envelope.</Text>
         </View>
       )}
+
+      {/* 3D Digital Twin Preview */}
+      <View style={LAYOUT_STYLES.sectionGap}>
+        <Text style={[TEXT_STYLES.label, { marginBottom: 8 }]}>GENERATIVE DIGITAL TWIN</Text>
+        <DigitalTwinPreview deviation={deviation} status={status} aiOptimized={aiOptimized} />
+      </View>
 
       {/* Pipeline Status */}
       <View style={LAYOUT_STYLES.sectionGap}>
