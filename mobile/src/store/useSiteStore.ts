@@ -38,6 +38,7 @@ interface SiteState {
   // Machinery
   machineryState: MachineryState;
   activeCommands: string[];
+  executedCommands: string[];
 
   // UI
   scenarioStage: ScenarioStage;
@@ -55,6 +56,10 @@ interface SiteState {
   connectEventStream: () => () => void;
   setControlMode: (mode: 'AUTO' | 'MANUAL') => void;
   dismissNotification: (id: string) => void;
+  updateMachineryPos: (type: "excavator" | "crane", coords: Partial<{ x: number; y: number; z: number; status: "IDLE" | "MOVING" | "WORKING" | "OFFLINE" }>) => void;
+  executeGCodeQueue: (gcodeArray: string[]) => void;
+  manualMove: (deltaX: number, deltaZ: number) => void;
+  manualMoveCrane: (deltaX: number, deltaZ: number) => void;
 }
 
 const stamp = () => new Date().toISOString().substring(11, 19);
@@ -101,6 +106,7 @@ export const useSiteStore = create<SiteState>((set, get) => ({
     crane: { x: MACHINERY.CRANE_INIT.x, y: MACHINERY.CRANE_INIT.y, z: MACHINERY.CRANE_INIT.z, status: "IDLE" },
   },
   activeCommands: [],
+  executedCommands: [],
 
   scenarioStage: "SENSE",
   notifications: [],
@@ -280,5 +286,119 @@ export const useSiteStore = create<SiteState>((set, get) => ({
   dismissNotification: (id) =>
     set((state) => ({
       notifications: state.notifications.filter((n) => n.id !== id),
+    })),
+
+  updateMachineryPos: (type, coords) =>
+    set((state) => ({
+      machineryState: {
+        ...state.machineryState,
+        [type]: {
+          ...state.machineryState[type],
+          x: coords.x ?? state.machineryState[type].x,
+          y: coords.y ?? state.machineryState[type].y,
+          z: coords.z ?? state.machineryState[type].z,
+          status: coords.status ?? state.machineryState[type].status,
+        },
+      },
+    })),
+
+  executeGCodeQueue: (gcodeArray) => {
+    const formattedQueue = gcodeArray.map((command) => {
+      if (command.startsWith("G01")) {
+        return command.replace(/X([-\d.]+)|Y([-\d.]+)|Z([-\d.]+)(?=\s|$)/g, (segment) => {
+          const axis = segment[0];
+          const value = parseFloat(segment.slice(1));
+          return `${axis}${value.toFixed(2)}`;
+        });
+      }
+      return command;
+    });
+
+    set({ activeCommands: formattedQueue, executedCommands: [] });
+
+    let delay = 0;
+    formattedQueue.forEach((command, index) => {
+      setTimeout(() => {
+        if (command.startsWith("G01")) {
+          const match = command.match(/G01 X([-\d.]+) Y([-\d.]+) Z([-\d.]+) F(\d+)/);
+          if (match) {
+            const x = parseFloat(match[1]);
+            const y = parseFloat(match[2]);
+            const z = parseFloat(match[3]);
+            set((state) => ({
+              machineryState: {
+                ...state.machineryState,
+                excavator: { ...state.machineryState.excavator, x, y, z, status: "MOVING" },
+              },
+              executedCommands: [...state.executedCommands, command],
+              activeCommands: state.activeCommands.slice(1),
+            }));
+          }
+        } else if (command === "M03") {
+          set((state) => ({
+            machineryState: {
+              ...state.machineryState,
+              excavator: { ...state.machineryState.excavator, status: "WORKING" },
+            },
+            executedCommands: [...state.executedCommands, command],
+            activeCommands: state.activeCommands.slice(1),
+          }));
+        } else if (command === "M05") {
+          set((state) => ({
+            machineryState: {
+              ...state.machineryState,
+              excavator: { ...state.machineryState.excavator, status: "IDLE" },
+            },
+            executedCommands: [...state.executedCommands, command],
+            activeCommands: state.activeCommands.slice(1),
+          }));
+          if (index === formattedQueue.length - 1) {
+            set((state) => ({
+              deviation: 0,
+              status: "STABLE",
+              anomalyDetected: false,
+              scenarioEvents: [
+                ...state.scenarioEvents.slice(-SIMULATION.MAX_EVENTS),
+                {
+                  id: `evt-${Date.now()}`,
+                  ts: stamp(),
+                  stage: "IMPACT",
+                  severity: "success",
+                  title: "Autonomous Fix Completed by Excavator_14",
+                  detail: "G-Code execution finished; site deviation corrected.",
+                },
+              ],
+            }));
+          }
+        }
+      }, delay);
+      delay += SIMULATION.COMMAND_DELAY_MS;
+    });
+  },
+
+  manualMove: (deltaX, deltaZ) =>
+    set((state) => ({
+      machineryState: {
+        ...state.machineryState,
+        excavator: {
+          ...state.machineryState.excavator,
+          x: Math.max(-25, Math.min(25, state.machineryState.excavator.x + deltaX)),
+          z: Math.max(-25, Math.min(25, state.machineryState.excavator.z + deltaZ)),
+          status: "MOVING",
+        },
+      },
+    })),
+
+  manualMoveCrane: (deltaX, deltaZ) =>
+    set((state) => ({
+      machineryState: {
+        ...state.machineryState,
+        crane: {
+          ...state.machineryState.crane,
+          x: Math.max(-25, Math.min(25, state.machineryState.crane.x + deltaX)),
+          z: Math.max(-25, Math.min(25, state.machineryState.crane.z + deltaZ)),
+          status: "MOVING",
+        },
+      },
     })),
 }));

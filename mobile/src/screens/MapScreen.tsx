@@ -32,8 +32,17 @@ function BatteryBar({ battery }: { battery: number }) {
   );
 }
 
+const MOCK_LOGS = [
+  { ts: "14:02:33.401", level: "INFO" as const, msg: "Node-7A connected. Handshake OK." },
+  { ts: "14:02:34.112", level: "DATA" as const, msg: 'Payload: { "sbc": 452.1, "dev": 2.3 }' },
+  { ts: "14:02:35.805", level: "WARN" as const, msg: "Node-12B latency > 500ms (742ms)." },
+  { ts: "14:02:36.002", level: "DATA" as const, msg: 'Payload: { "sbc": 390.4, "dev": 5.1 }' },
+  { ts: "14:02:38.541", level: "ERROR" as const, msg: "Node-4C heartbeat timeout. Connection dropped." },
+  { ts: "14:02:40.120", level: "INFO" as const, msg: "Generative Engine acknowledged frame 88412." },
+];
+
 export default function MapScreen() {
-  const { machineryState } = useSiteStore();
+  const { machineryState, activeCommands, executedCommands } = useSiteStore();
 
   return (
     <ScrollView style={LAYOUT_STYLES.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -180,6 +189,81 @@ export default function MapScreen() {
             POS: X{machineryState.crane.x.toFixed(1)} Y{machineryState.crane.y.toFixed(1)} Z{machineryState.crane.z.toFixed(1)}
           </Text>
           <Text style={TEXT_STYLES.caption}>STATUS: {machineryState.crane.status}</Text>
+        </View>
+      </View>
+
+      {/* Edge Gateway Terminal */}
+      <View style={LAYOUT_STYLES.sectionGap}>
+        <Text style={[TEXT_STYLES.label, { marginBottom: 12 }]}>EDGE GATEWAY TERMINAL</Text>
+        <View style={[styles.terminalCard, LAYOUT_STYLES.sectionGap]}>
+          {/* Terminal Header */}
+          <View style={styles.terminalHeader}>
+            <View style={LAYOUT_STYLES.row}>
+              <View style={[styles.terminalDot, { backgroundColor: "#CC0000" }]} />
+              <View style={[styles.terminalDot, { backgroundColor: "#000000", marginLeft: 4 }]} />
+              <View style={[styles.terminalDot, { backgroundColor: "#000000", marginLeft: 4 }]} />
+            </View>
+            <Text style={[TEXT_STYLES.caption, { color: "#666666" }]}>EDGE GATEWAY</Text>
+          </View>
+
+          {/* Terminal Logs */}
+          <View style={styles.terminalBody}>
+            {MOCK_LOGS.map((log, i) => (
+              <View key={i} style={styles.terminalRow}>
+                <Text style={[TEXT_STYLES.caption, { color: "#666666", width: 90 }]}>[{log.ts}]</Text>
+                <Text
+                  style={[
+                    TEXT_STYLES.caption,
+                    {
+                      width: 50,
+                      color:
+                        log.level === "INFO"
+                          ? "#000000"
+                          : log.level === "DATA"
+                          ? "#000000"
+                          : log.level === "WARN"
+                          ? "#000000"
+                          : "#CC0000",
+                      fontWeight: "700",
+                    },
+                  ]}
+                >
+                  {log.level}
+                </Text>
+                <Text style={[TEXT_STYLES.caption, { flex: 1, color: "#333333" }]}>{log.msg}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Active G-Code Queue */}
+          {activeCommands.length > 0 && (
+            <View style={styles.commandBlock}>
+              <Text style={[TEXT_STYLES.label, { marginBottom: 8, color: "#000000" }]}>ACTIVE G-CODE QUEUE</Text>
+              {activeCommands.slice(-5).map((command, idx) => (
+                <View key={`${command}-${idx}`} style={styles.commandRow}>
+                  <Text style={[TEXT_STYLES.caption, { color: "#000000" }]}>{"  "}{command}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Executed Commands */}
+          {executedCommands.length > 0 && (
+            <View style={styles.commandBlock}>
+              <Text style={[TEXT_STYLES.label, { marginBottom: 8, color: "#666666" }]}>COMMAND HISTORY ({executedCommands.length} EXECUTED)</Text>
+              {executedCommands.slice(-5).map((command, idx) => (
+                <View key={`${command}-${idx}`} style={styles.commandRow}>
+                  <Text style={[TEXT_STYLES.caption, { color: "#666666" }]}>{"  "}{command}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {activeCommands.length === 0 && executedCommands.length === 0 && (
+            <View style={styles.commandBlock}>
+              <Text style={[TEXT_STYLES.caption, { color: "#999999" }]}>SYSTEM IDLE - AWAITING COMMANDS</Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -396,5 +480,40 @@ const styles = StyleSheet.create({
   },
   batteryFill: {
     height: 3,
+  },
+  terminalCard: {
+    borderWidth: 1,
+    borderColor: "#000000",
+    backgroundColor: "#FFFFFF",
+  },
+  terminalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5E5",
+  },
+  terminalDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  terminalBody: {
+    padding: 12,
+    maxHeight: 160,
+  },
+  terminalRow: {
+    flexDirection: "row",
+    marginBottom: 4,
+  },
+  commandBlock: {
+    padding: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E5E5",
+  },
+  commandRow: {
+    paddingVertical: 2,
   },
 });
